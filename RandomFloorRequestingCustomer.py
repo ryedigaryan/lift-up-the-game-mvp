@@ -4,7 +4,7 @@ from FloorRequestPopup import FloorRequestPopup
 
 
 class RandomFloorRequestingCustomer:
-    def __init__(self, spawn_floor, spawn_x, total_floors):
+    def __init__(self, spawn_floor, spawn_x, total_floors, floor_width):
         self.current_floor = spawn_floor
         self.target_floor = self._request_random_floor(spawn_floor, total_floors)
         self.spawn_x = spawn_x
@@ -18,6 +18,11 @@ class RandomFloorRequestingCustomer:
         self.show_popup = True
         self.popup = FloorRequestPopup(self)
         self.target_spawn_x = None  # Will be set when exiting lift
+        
+        # Wandering properties
+        self.floor_width = floor_width
+        self.wandering_speed = 0.5
+        self.wandering_direction = random.choice([-1, 1])
 
     def _request_random_floor(self, current_floor, total_floors):
         """Request a random floor different from current floor"""
@@ -32,7 +37,22 @@ class RandomFloorRequestingCustomer:
 
     def update(self, lift_positions):
         """Update customer state and position"""
-        if self.state == "walking_to_lift" and self.selected_lift:
+        if self.state == "waiting_for_lift_selection":
+            # Wander slowly if mouse is not over popup
+            mouse_pos = pg.mouse.get_pos()
+            if not self.is_mouse_over_popup(mouse_pos):
+                self.x += self.wandering_speed * self.wandering_direction
+                
+                # Bounce off edges (keeping some margin)
+                margin = 50
+                if self.x < margin:
+                    self.x = margin
+                    self.wandering_direction = 1
+                elif self.x > self.floor_width - margin - self.width:
+                    self.x = self.floor_width - margin - self.width
+                    self.wandering_direction = -1
+
+        elif self.state == "walking_to_lift" and self.selected_lift:
             # Walk towards the selected lift
             target_x = lift_positions[self.selected_lift]
             if abs(self.x - target_x) < self.speed:

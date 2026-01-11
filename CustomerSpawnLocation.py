@@ -3,7 +3,7 @@ from RandomFloorRequestingCustomer import RandomFloorRequestingCustomer
 
 
 class CustomerSpawnLocation:
-    def __init__(self, floor_number, spawn_x, total_floors, spawn_interval=60.0, start_time=None):
+    def __init__(self, floor_number, spawn_x, total_floors, floor_width, spawn_interval=60.0, start_time=None):
         """
         Initialize customer spawn location
 
@@ -11,12 +11,14 @@ class CustomerSpawnLocation:
             floor_number: The floor this spawn location is on
             spawn_x: X coordinate where customers spawn
             total_floors: Total number of floors in the game
+            floor_width: Width of the floor (for wandering limits)
             spawn_interval: Time in seconds between spawns (default 60)
             start_time: Time in seconds when first spawn occurs (default: floor_number * 60)
         """
         self.floor_number = floor_number
         self.spawn_x = spawn_x
         self.total_floors = total_floors
+        self.floor_width = floor_width
         self.spawn_interval = spawn_interval
         self.start_time = start_time if start_time is not None else floor_number * 60.0
         self.time_since_start = 0.0
@@ -43,7 +45,8 @@ class CustomerSpawnLocation:
                 customer = RandomFloorRequestingCustomer(
                     self.floor_number,
                     self.spawn_x,
-                    self.total_floors
+                    self.total_floors,
+                    self.floor_width
                 )
                 self.spawned_customers.append(customer)
                 self.total_spawned_count += 1

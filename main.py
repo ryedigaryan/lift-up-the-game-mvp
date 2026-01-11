@@ -107,13 +107,13 @@ class LiftUpGame:
             else:
                 # Mouse left the popup
                 self.active_popup_customer = None
-
-        # Check if mouse entered any popup
-        for floor in self.floors:
-            for customer in floor.get_all_customers():
-                if customer.is_mouse_over_popup(mouse_pos):
-                    self.active_popup_customer = customer
-                    return
+        else:
+            # Check if mouse entered any popup
+            for floor in self.floors:
+                for customer in floor.get_all_customers():
+                    if customer.is_mouse_over_popup(mouse_pos):
+                        self.active_popup_customer = customer
+                        return
 
     def draw(self):
         """Draw everything"""
