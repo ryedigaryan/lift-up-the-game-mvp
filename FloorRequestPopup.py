@@ -2,17 +2,20 @@ import pygame as pg
 
 
 class FloorRequestPopup:
-    def __init__(self, customer):
+    def __init__(self, customer, offset_y=0):
         self.customer = customer
         self.popup_width = 150
         self.popup_height = 80
         self.button_width = 50
         self.button_height = 30
+        self.offset_y = offset_y
 
     def get_popup_rect(self):
         """Get the popup rectangle"""
         popup_x = self.customer.x - self.popup_width // 2 + self.customer.width // 2
-        popup_y = self.customer.y - self.popup_height - 10
+        # Apply random offset to Y position
+        # Shifted down by reducing the base subtraction (from -10 to -5)
+        popup_y = self.customer.y - self.popup_height - 5 - self.offset_y
         return popup_x, popup_y, self.popup_width, self.popup_height
 
     def is_mouse_over(self, mouse_pos):
@@ -55,8 +58,8 @@ class FloorRequestPopup:
 
         popup_x, popup_y, popup_width, popup_height = self.get_popup_rect()
 
-        # Draw popup background
-        pg.draw.rect(screen, (255, 255, 200), (popup_x, popup_y, popup_width, popup_height))
+        # Draw popup background using customer's color
+        pg.draw.rect(screen, self.customer.color, (popup_x, popup_y, popup_width, popup_height))
         pg.draw.rect(screen, (0, 0, 0), (popup_x, popup_y, popup_width, popup_height), 2)
 
         # Draw text

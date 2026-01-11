@@ -16,13 +16,19 @@ class RandomFloorRequestingCustomer:
         self.selected_lift = None
         self.speed = 2
         self.show_popup = True
-        self.popup = FloorRequestPopup(self)
         self.target_spawn_x = None  # Will be set when exiting lift
         
         # Wandering properties
         self.floor_width = floor_width
         self.wandering_speed = 0.5
         self.wandering_direction = random.choice([-1, 1])
+        
+        # Random color
+        self.color = (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
+        
+        # Random popup offset (between 0 and 30 pixels higher)
+        offset_y = random.randint(0, 30)
+        self.popup = FloorRequestPopup(self, offset_y)
 
     def _request_random_floor(self, current_floor, total_floors):
         """Request a random floor different from current floor"""
@@ -100,10 +106,11 @@ class RandomFloorRequestingCustomer:
             # Only draw customer body
             # Change color based on state
             if self.state == "exiting_lift":
-                color = (50, 200, 50)  # Green when exiting
+                # Flash green or just use their color but brighter?
+                # Let's keep the "delivered" feedback distinct
+                pg.draw.rect(screen, (50, 255, 50), (self.x, self.y, self.width, self.height))
             else:
-                color = (50, 150, 200)  # Blue normally
-            pg.draw.rect(screen, color, (self.x, self.y, self.width, self.height))
+                pg.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
 
     def is_mouse_over_popup(self, mouse_pos):
         """Check if mouse is over the popup"""

@@ -79,9 +79,6 @@ class LiftUpGame:
                     self.active_popup_customer = None
                 return
 
-        # If no active popup, or click wasn't on active popup buttons, do nothing
-        # (Previously we iterated through all floors/customers)
-
     def update(self, dt):
         """Update game state"""
         # Get lift positions for customer pathfinding
