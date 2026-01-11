@@ -76,6 +76,7 @@ class LiftUpGame:
                             lift.add_customer_request(self.active_popup_customer)
                             break
                     # Clear active popup since customer is now waiting
+                    self.active_popup_customer.is_active = False
                     self.active_popup_customer = None
                 return
 
@@ -109,6 +110,7 @@ class LiftUpGame:
                 return  # Keep current active popup
             else:
                 # Mouse left the popup
+                self.active_popup_customer.is_active = False
                 self.active_popup_customer = None
         else:
             # Check if mouse entered any popup
@@ -116,6 +118,7 @@ class LiftUpGame:
                 for customer in floor.get_all_customers():
                     if customer.is_mouse_over_popup(mouse_pos):
                         self.active_popup_customer = customer
+                        self.active_popup_customer.is_active = True
                         return
 
     def draw(self):

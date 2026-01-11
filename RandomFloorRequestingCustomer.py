@@ -17,6 +17,7 @@ class RandomFloorRequestingCustomer:
         self.speed = 2
         self.show_popup = True
         self.target_spawn_x = None  # Will be set when exiting lift
+        self.is_active = False  # Is this customer's popup currently active?
         
         # Wandering properties
         self.floor_width = floor_width
@@ -40,13 +41,13 @@ class RandomFloorRequestingCustomer:
         self.selected_lift = lift_name
         self.state = "walking_to_lift"
         self.show_popup = False
+        self.is_active = False
 
     def update(self, lift_positions):
         """Update customer state and position"""
         if self.state == "waiting_for_lift_selection":
-            # Wander slowly if mouse is not over popup
-            mouse_pos = pg.mouse.get_pos()
-            if not self.is_mouse_over_popup(mouse_pos):
+            # Wander slowly if not active (mouse not hovering over popup)
+            if not self.is_active:
                 self.x += self.wandering_speed * self.wandering_direction
                 
                 # Bounce off edges (keeping some margin)
