@@ -66,15 +66,21 @@ class LiftUpGame:
 
     def _handle_click(self, mouse_pos):
         """Handle mouse clicks"""
-        # Check all floors for customer clicks
-        for floor in self.floors:
-            customer = floor.handle_click(mouse_pos)
-            if customer and customer.selected_lift:
-                # Add customer to the selected lift
-                for lift in self.lifts:
-                    if lift.name == customer.selected_lift:
-                        lift.add_customer_request(customer)
-                        break
+        # Only handle click for the active popup customer if one exists
+        if self.active_popup_customer:
+            if self.active_popup_customer.handle_click(mouse_pos):
+                # If click was handled (lift selected), add request
+                if self.active_popup_customer.selected_lift:
+                    for lift in self.lifts:
+                        if lift.name == self.active_popup_customer.selected_lift:
+                            lift.add_customer_request(self.active_popup_customer)
+                            break
+                    # Clear active popup since customer is now waiting
+                    self.active_popup_customer = None
+                return
+
+        # If no active popup, or click wasn't on active popup buttons, do nothing
+        # (Previously we iterated through all floors/customers)
 
     def update(self, dt):
         """Update game state"""
