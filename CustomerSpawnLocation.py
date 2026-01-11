@@ -21,6 +21,7 @@ class CustomerSpawnLocation:
         self.start_time = start_time if start_time is not None else floor_number * 60.0
         self.time_since_start = 0.0
         self.spawned_customers = []
+        self.total_spawned_count = 0  # Track total number of customers spawned
 
     def update(self, dt):
         """
@@ -35,16 +36,17 @@ class CustomerSpawnLocation:
         if self.time_since_start >= self.start_time:
             # Calculate how many customers should have spawned by now
             time_since_first_spawn = self.time_since_start - self.start_time
-            expected_spawns = int(time_since_first_spawn / self.spawn_interval) + 1
+            expected_total_spawns = int(time_since_first_spawn / self.spawn_interval) + 1
 
-            # Spawn missing customers (in case of lag or initial spawn)
-            while len(self.spawned_customers) < expected_spawns:
+            # Spawn missing customers based on total count, not current list length
+            while self.total_spawned_count < expected_total_spawns:
                 customer = RandomFloorRequestingCustomer(
                     self.floor_number,
                     self.spawn_x,
                     self.total_floors
                 )
                 self.spawned_customers.append(customer)
+                self.total_spawned_count += 1
 
     def get_active_customers(self):
         """Get list of customers that haven't been delivered yet"""

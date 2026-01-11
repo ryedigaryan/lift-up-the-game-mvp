@@ -10,7 +10,7 @@ class LiftUpGame:
         # Game constants
         self.NUM_FLOORS = 5
         self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 600
+        self.SCREEN_HEIGHT = 800  # Increased from 600 to make floors taller
         self.FLOOR_HEIGHT = self.SCREEN_HEIGHT // self.NUM_FLOORS
 
         # Create screen

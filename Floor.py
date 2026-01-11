@@ -61,8 +61,8 @@ class Floor:
             self.floor_number,
             spawn_x,
             self.total_floors,
-            spawn_interval=30.0,
-            start_time=self.floor_number * 10.0
+            spawn_interval=30+self.floor_number*10,
+            start_time=self.floor_number * 2.0 + self.floor_number
         )
         self.spawn_locations.append(spawn_loc)
 

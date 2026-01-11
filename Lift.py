@@ -21,8 +21,10 @@ class Lift:
         self.target_floors = set()  # Set of floors to visit
         self.customers_inside = []  # Customers currently in the lift
         self.waiting_customers = {}  # floor -> list of customers waiting at that floor
+        self.request_queue = []  # Queue of requested floors (FIFO)
         self.state = "idle"  # idle, waiting, moving_up, moving_down
-        self.speed = 1.5  # pixels per frame
+        self.direction = "up"  # Preferred direction: "up" or "down"
+        self.speed = 2.5  # Increased from 1.5 to 2.5
         self.total_floors = total_floors
         self.floor_height = floor_height
         self.y = self._floor_to_y(0)
@@ -48,6 +50,10 @@ class Lift:
         """Add a customer request to this lift"""
         if customer.current_floor not in self.waiting_customers:
             self.waiting_customers[customer.current_floor] = []
+            # Add to request queue if not already present
+            if customer.current_floor not in self.request_queue:
+                self.request_queue.append(customer.current_floor)
+                
         self.waiting_customers[customer.current_floor].append(customer)
         self.target_floors.add(customer.current_floor)
 
@@ -82,73 +88,98 @@ class Lift:
             # Start moving
             if self.y > target_y:
                 self.state = "moving_up"
+                self.direction = "up"
             else:
                 self.state = "moving_down"
+                self.direction = "down"
 
     def _get_delivery_floors(self):
         """Get floors where customers inside need to be delivered"""
         return set(customer.target_floor for customer in self.customers_inside)
 
     def _get_next_floor(self):
-        """Get the next floor to visit based on current direction"""
-        if not self.target_floors:
-            return self.current_floor
+        """Get the next floor to visit based on prioritization rules"""
+        # Rule 1 & 3: If lift is empty, go to first requested floor in queue
+        if not self.customers_inside:
+            if self.request_queue:
+                return self.request_queue[0]
+            elif self.target_floors:
+                # Fallback if queue is empty but targets exist (shouldn't happen usually)
+                return list(self.target_floors)[0]
+            else:
+                return self.current_floor
 
-        sorted_floors = sorted(self.target_floors)
+        # Rule 2: Lift is not empty. Prioritize deliveries and pickups on the way.
         delivery_floors = self._get_delivery_floors()
-
-        # If we have customers inside, prioritize their delivery floors
-        if delivery_floors:
-            if self.state == "moving_up":
-                # Continue up, only stop at delivery floors or pickup floors on the way
-                floors_above = [f for f in sorted_floors if f > self.current_floor]
-                if floors_above:
-                    # Prefer delivery floors, but stop at pickup floors if they're on the way
-                    delivery_above = [f for f in floors_above if f in delivery_floors]
-                    if delivery_above:
-                        return delivery_above[0]
-                    # Only pickup if it's before the next delivery floor
-                    next_delivery = min(delivery_floors) if delivery_floors else float('inf')
-                    pickup_before_delivery = [f for f in floors_above if f < next_delivery]
-                    if pickup_before_delivery:
-                        return pickup_before_delivery[0]
-                    return delivery_above[0] if delivery_above else next_delivery
-                else:
-                    # Change direction to deliver
-                    return min(delivery_floors)
-            elif self.state == "moving_down":
-                # Continue down, only stop at delivery floors or pickup floors on the way
-                floors_below = [f for f in sorted_floors if f < self.current_floor]
-                if floors_below:
-                    delivery_below = [f for f in floors_below if f in delivery_floors]
-                    if delivery_below:
-                        return delivery_below[-1]
-                    # Only pickup if it's before the next delivery floor
-                    next_delivery = max(delivery_floors) if delivery_floors else float('-inf')
-                    pickup_before_delivery = [f for f in floors_below if f > next_delivery]
-                    if pickup_before_delivery:
-                        return pickup_before_delivery[-1]
-                    return delivery_below[-1] if delivery_below else next_delivery
-                else:
-                    # Change direction to deliver
-                    return max(delivery_floors)
-            else:  # idle
-                # Go to nearest delivery floor
-                return min(delivery_floors, key=lambda f: abs(f - self.current_floor))
-
-        # No customers inside, normal pickup behavior
-        if self.state == "moving_up" or self.state == "idle":
-            floors_above = [f for f in sorted_floors if f > self.current_floor]
-            if floors_above:
-                return floors_above[0]
+        
+        if self.direction == "up":
+            # Check for deliveries above
+            deliveries_above = [f for f in delivery_floors if f > self.current_floor]
+            
+            if deliveries_above:
+                limit = max(deliveries_above)
+                # Pickups on the way: strictly between current and limit
+                # AND customer wants to go UP (target > pickup floor)
+                pickups_on_way = []
+                for f in self.waiting_customers:
+                    if self.current_floor < f <= limit:
+                        # Check if any customer at floor f wants to go UP
+                        if any(c.target_floor > f for c in self.waiting_customers[f]):
+                            pickups_on_way.append(f)
+                            
+                candidates = deliveries_above + pickups_on_way
+                return min(candidates)
             else:
-                return sorted_floors[0]
-        else:
-            floors_below = [f for f in sorted_floors if f < self.current_floor]
-            if floors_below:
-                return floors_below[-1]
+                # No deliveries above, check below (switch direction)
+                deliveries_below = [f for f in delivery_floors if f < self.current_floor]
+                if deliveries_below:
+                    limit = min(deliveries_below)
+                    # Pickups on the way: strictly between limit and current
+                    # AND customer wants to go DOWN (target < pickup floor)
+                    pickups_on_way = []
+                    for f in self.waiting_customers:
+                        if limit <= f < self.current_floor:
+                            if any(c.target_floor < f for c in self.waiting_customers[f]):
+                                pickups_on_way.append(f)
+                                
+                    candidates = deliveries_below + pickups_on_way
+                    return max(candidates)
+                else:
+                    return self.current_floor
+
+        else:  # direction == "down"
+            # Check for deliveries below
+            deliveries_below = [f for f in delivery_floors if f < self.current_floor]
+            
+            if deliveries_below:
+                limit = min(deliveries_below)
+                # Pickups on the way: strictly between limit and current
+                # AND customer wants to go DOWN (target < pickup floor)
+                pickups_on_way = []
+                for f in self.waiting_customers:
+                    if limit <= f < self.current_floor:
+                        if any(c.target_floor < f for c in self.waiting_customers[f]):
+                            pickups_on_way.append(f)
+                            
+                candidates = deliveries_below + pickups_on_way
+                return max(candidates)
             else:
-                return sorted_floors[-1]
+                # No deliveries below, check above (switch direction)
+                deliveries_above = [f for f in delivery_floors if f > self.current_floor]
+                if deliveries_above:
+                    limit = max(deliveries_above)
+                    # Pickups on the way: strictly between current and limit
+                    # AND customer wants to go UP (target > pickup floor)
+                    pickups_on_way = []
+                    for f in self.waiting_customers:
+                        if self.current_floor < f <= limit:
+                            if any(c.target_floor > f for c in self.waiting_customers[f]):
+                                pickups_on_way.append(f)
+                                
+                    candidates = deliveries_above + pickups_on_way
+                    return min(candidates)
+                else:
+                    return self.current_floor
 
     def _move_towards_target(self):
         """Move the lift towards the target floor"""
@@ -193,18 +224,35 @@ class Lift:
 
         # Pick up customers
         if self.current_floor in self.waiting_customers:
-            for customer in self.waiting_customers[self.current_floor]:
-                if customer.state == "waiting_at_lift":
-                    # Remove customer from the floor they were on
-                    if self.floors and customer.current_floor < len(self.floors):
-                        self.floors[customer.current_floor].remove_customer(customer)
+            # Determine which customers to pick up based on direction
+            customers_to_pickup = []
+            
+            # If we have customers inside, we must respect the current direction
+            if self.customers_inside:
+                for customer in self.waiting_customers[self.current_floor]:
+                    if customer.state == "waiting_at_lift":
+                        if self.direction == "up" and customer.target_floor > self.current_floor:
+                            customers_to_pickup.append(customer)
+                        elif self.direction == "down" and customer.target_floor < self.current_floor:
+                            customers_to_pickup.append(customer)
+            else:
+                # If empty, we pick up everyone (or could implement logic to pick one direction)
+                # For now, pick up everyone to avoid leaving people behind if we switch direction
+                for customer in self.waiting_customers[self.current_floor]:
+                    if customer.state == "waiting_at_lift":
+                        customers_to_pickup.append(customer)
 
-                    customer.enter_lift()
-                    self.customers_inside.append(customer)
-                    # Add their target floor to our route
-                    self.target_floors.add(customer.target_floor)
+            for customer in customers_to_pickup:
+                # Remove customer from the floor they were on
+                if self.floors and customer.current_floor < len(self.floors):
+                    self.floors[customer.current_floor].remove_customer(customer)
+                    
+                customer.enter_lift()
+                self.customers_inside.append(customer)
+                # Add their target floor to our route
+                self.target_floors.add(customer.target_floor)
 
-            # Remove customers who entered
+            # Remove customers who entered from the waiting list
             self.waiting_customers[self.current_floor] = [
                 c for c in self.waiting_customers[self.current_floor]
                 if c.state != "in_lift"
@@ -212,6 +260,9 @@ class Lift:
 
             if not self.waiting_customers[self.current_floor]:
                 del self.waiting_customers[self.current_floor]
+                # Remove from request queue since we serviced this floor
+                if self.current_floor in self.request_queue:
+                    self.request_queue.remove(self.current_floor)
 
         # Remove current floor from targets only if no more waiting customers
         if self.current_floor not in self.waiting_customers:
