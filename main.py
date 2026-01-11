@@ -1,6 +1,7 @@
 import pygame as pg
 from Floor import Floor
 from Lift import Lift
+from StatusBar import StatusBar
 
 
 class LiftUpGame:
@@ -10,8 +11,10 @@ class LiftUpGame:
         # Game constants
         self.NUM_FLOORS = 5
         self.SCREEN_WIDTH = 800
-        self.SCREEN_HEIGHT = 800  # Increased from 600 to make floors taller
-        self.FLOOR_HEIGHT = self.SCREEN_HEIGHT // self.NUM_FLOORS
+        self.GAME_HEIGHT = 800  # Height of the game area
+        self.STATUS_BAR_HEIGHT = 100
+        self.SCREEN_HEIGHT = self.GAME_HEIGHT + self.STATUS_BAR_HEIGHT
+        self.FLOOR_HEIGHT = self.GAME_HEIGHT // self.NUM_FLOORS
 
         # Create screen
         self.screen = pg.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
@@ -25,6 +28,7 @@ class LiftUpGame:
         self.floors = []
         self.lifts = []
         self.active_popup_customer = None  # Track which customer's popup is active
+        self.status_bar = StatusBar(self.SCREEN_WIDTH, self.STATUS_BAR_HEIGHT, 0, self.GAME_HEIGHT)
 
         self._initialize_game()
 
@@ -93,12 +97,33 @@ class LiftUpGame:
         for lift in self.lifts:
             lift.update(dt)
 
-        # Clean up delivered customers periodically
+        # Clean up delivered customers periodically and calculate penalties
         for floor in self.floors:
-            floor.remove_delivered_customers()
+            self._process_delivered_customers(floor)
 
         # Update active popup based on mouse position
         self._update_active_popup()
+
+    def _process_delivered_customers(self, floor):
+        """Process delivered customers to calculate penalty and remove them"""
+        # We need to iterate through all customers on the floor to find delivered ones
+        # This includes spawn locations and arrived customers
+        
+        # Check spawn locations
+        for spawn_loc in floor.spawn_locations:
+            for customer in spawn_loc.spawned_customers:
+                if customer.state == "delivered":
+                    penalty = customer.calculate_penalty()
+                    self.status_bar.add_penalty(penalty)
+            spawn_loc.remove_delivered_customers()
+            
+        # Check arrived customers
+        for customer in floor.arrived_customers:
+            if customer.state == "delivered":
+                penalty = customer.calculate_penalty()
+                self.status_bar.add_penalty(penalty)
+        
+        floor.arrived_customers = [c for c in floor.arrived_customers if c.state != "delivered"]
 
     def _update_active_popup(self):
         """Update which popup is active based on mouse position"""
@@ -149,6 +174,9 @@ class LiftUpGame:
         font = pg.font.Font(None, 24)
         time_text = font.render(f"Time: {game_time:.1f}s", True, (255, 255, 255))
         self.screen.blit(time_text, (self.SCREEN_WIDTH - 120, 10))
+        
+        # Draw status bar
+        self.status_bar.draw(self.screen)
 
         # Update display
         pg.display.flip()

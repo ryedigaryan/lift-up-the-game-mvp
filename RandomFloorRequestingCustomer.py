@@ -1,6 +1,7 @@
 import pygame as pg
 import random
 from FloorRequestPopup import FloorRequestPopup
+from PenaltyAttributes import PenaltyAttributes
 
 
 class RandomFloorRequestingCustomer:
@@ -31,6 +32,17 @@ class RandomFloorRequestingCustomer:
         offset_y = random.randint(0, 30)
         self.popup = FloorRequestPopup(self, offset_y)
 
+        # Penalty attributes
+        self.request_time = pg.time.get_ticks() / 1000.0
+        self.assignment_time = None
+        self.delivery_time = None
+        
+        # Randomly assign penalty attributes variant
+        if random.random() < 0.5:
+            self.penalty_attributes = PenaltyAttributes.variant_1()
+        else:
+            self.penalty_attributes = PenaltyAttributes.variant_2()
+
     def _request_random_floor(self, current_floor, total_floors):
         """Request a random floor different from current floor"""
         available_floors = [f for f in range(total_floors) if f != current_floor]
@@ -42,6 +54,23 @@ class RandomFloorRequestingCustomer:
         self.state = "walking_to_lift"
         self.show_popup = False
         self.is_active = False
+        self.assignment_time = pg.time.get_ticks() / 1000.0
+
+    def calculate_penalty(self):
+        """Calculate penalty for this customer"""
+        if self.assignment_time is None or self.delivery_time is None:
+            return 0.0
+            
+        X = self.request_time
+        Y = self.assignment_time
+        Z = self.delivery_time
+        
+        apc = self.penalty_attributes.apc
+        dpc = self.penalty_attributes.dpc
+        cipc = self.penalty_attributes.cipc
+        
+        penalty = ((Y - X) * apc + (Z - Y) * dpc) * cipc
+        return penalty
 
     def update(self, lift_positions):
         """Update customer state and position"""
@@ -75,6 +104,7 @@ class RandomFloorRequestingCustomer:
             if abs(self.x - target_x) < self.speed:
                 self.x = target_x
                 self.state = "delivered"
+                self.delivery_time = pg.time.get_ticks() / 1000.0
             elif self.x < target_x:
                 self.x += self.speed
             else:
