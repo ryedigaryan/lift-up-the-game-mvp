@@ -33,7 +33,8 @@ class Lift:
 
     def _floor_to_y(self, floor):
         """Convert floor number to Y position (align with floor bottom)"""
-        return (self.total_floors - 1 - floor) * self.floor_height + self.floor_height - self.height
+        ground_height = 10
+        return (self.total_floors - 1 - floor) * self.floor_height + self.floor_height - ground_height - self.height
 
     def _y_to_floor(self):
         """Get current floor based on Y position"""

@@ -120,13 +120,13 @@ class LiftUpGame:
         # Clear screen
         self.screen.fill((30, 30, 30))
 
+        # Draw lifts first (so customers appear in front)
+        for lift in self.lifts:
+            lift.draw(self.screen)
+
         # Draw floors (without popups)
         for floor in self.floors:
             floor.draw(self.screen, draw_popups=False)
-
-        # Draw lifts
-        for lift in self.lifts:
-            lift.draw(self.screen)
 
         # Draw non-active popups first
         for floor in self.floors:
