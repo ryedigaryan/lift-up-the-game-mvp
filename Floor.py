@@ -25,6 +25,9 @@ class Floor:
         # Create single spawn location randomly positioned far from lifts
         self.spawn_locations = []
         self._create_spawn_location(lift_center_x)
+        
+        # Customers that arrived from other floors
+        self.arrived_customers = []
 
     def _create_spawn_location(self, lift_center_x):
         """Create a single random spawn location far from lifts"""
@@ -73,12 +76,17 @@ class Floor:
         for spawn_loc in self.spawn_locations:
             for customer in spawn_loc.get_active_customers():
                 customer.update(lift_positions)
+                
+        # Update arrived customers
+        for customer in self.arrived_customers:
+            customer.update(lift_positions)
 
     def get_all_customers(self):
         """Get all customers on this floor"""
         all_customers = []
         for spawn_loc in self.spawn_locations:
             all_customers.extend(spawn_loc.get_active_customers())
+        all_customers.extend(self.arrived_customers)
         return all_customers
 
     def get_spawn_location_x(self):
@@ -93,6 +101,22 @@ class Floor:
             if customer.handle_click(mouse_pos):
                 return customer
         return None
+        
+    def add_customer(self, customer):
+        """Add a customer to this floor (e.g. arrived from lift)"""
+        self.arrived_customers.append(customer)
+        
+    def remove_customer(self, customer):
+        """Remove a customer from this floor"""
+        # Try to remove from spawn locations
+        for spawn_loc in self.spawn_locations:
+            if customer in spawn_loc.spawned_customers:
+                spawn_loc.spawned_customers.remove(customer)
+                return
+        
+        # Try to remove from arrived_customers
+        if customer in self.arrived_customers:
+            self.arrived_customers.remove(customer)
 
     def draw(self, screen, draw_popups=False):
         """Draw the floor (popups drawn separately to be on top)"""
@@ -131,3 +155,5 @@ class Floor:
         """Clean up delivered customers"""
         for spawn_loc in self.spawn_locations:
             spawn_loc.remove_delivered_customers()
+            
+        self.arrived_customers = [c for c in self.arrived_customers if c.state != "delivered"]

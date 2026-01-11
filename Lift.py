@@ -180,6 +180,11 @@ class Lift:
                     target_spawn_x = self.floors[self.current_floor].get_spawn_location_x()
 
                 customer.exit_lift(self.current_floor, self.x + self.width // 2, target_spawn_x)
+                
+                # Add customer to the floor's arrived list
+                if self.floors and self.current_floor < len(self.floors):
+                    self.floors[self.current_floor].add_customer(customer)
+                    
                 customers_to_remove.append(customer)
 
         for customer in customers_to_remove:
@@ -189,6 +194,10 @@ class Lift:
         if self.current_floor in self.waiting_customers:
             for customer in self.waiting_customers[self.current_floor]:
                 if customer.state == "waiting_at_lift":
+                    # Remove customer from the floor they were on
+                    if self.floors and customer.current_floor < len(self.floors):
+                        self.floors[customer.current_floor].remove_customer(customer)
+
                     customer.enter_lift()
                     self.customers_inside.append(customer)
                     # Add their target floor to our route
