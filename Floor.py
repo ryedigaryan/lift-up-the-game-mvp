@@ -1,0 +1,133 @@
+import pygame as pg
+import random
+from CustomerSpawnLocation import CustomerSpawnLocation
+
+
+class Floor:
+    def __init__(self, floor_number, y_position, width, height, total_floors, lift_center_x):
+        """
+        Initialize a floor
+
+        Args:
+            floor_number: The floor number (0-indexed)
+            y_position: Y coordinate of the floor
+            width: Width of the floor
+            height: Height of the floor
+            total_floors: Total number of floors in the game
+            lift_center_x: X coordinate of the center between lifts
+        """
+        self.floor_number = floor_number
+        self.y = y_position
+        self.width = width
+        self.height = height
+        self.total_floors = total_floors
+
+        # Create single spawn location randomly positioned far from lifts
+        self.spawn_locations = []
+        self._create_spawn_location(lift_center_x)
+
+    def _create_spawn_location(self, lift_center_x):
+        """Create a single random spawn location far from lifts"""
+        # Define exclusion zone around lifts (200 pixels wide)
+        lift_zone_left = lift_center_x - 100
+        lift_zone_right = lift_center_x + 100
+
+        # Define safe margin from edges
+        margin = 50
+
+        # Create list of valid spawn positions (far from lifts)
+        valid_positions = []
+
+        # Left side positions
+        for x in range(margin, int(lift_zone_left)):
+            valid_positions.append(x)
+
+        # Right side positions
+        for x in range(int(lift_zone_right), self.width - margin):
+            valid_positions.append(x)
+
+        # Choose random position
+        if valid_positions:
+            spawn_x = random.choice(valid_positions)
+        else:
+            # Fallback if no valid positions
+            spawn_x = margin
+
+        # Create spawn location
+        spawn_loc = CustomerSpawnLocation(
+            self.floor_number,
+            spawn_x,
+            self.total_floors,
+            spawn_interval=30.0,
+            start_time=self.floor_number * 10.0
+        )
+        self.spawn_locations.append(spawn_loc)
+
+    def update(self, dt, lift_positions):
+        """Update floor and all spawn locations"""
+        # Update spawn locations
+        for spawn_loc in self.spawn_locations:
+            spawn_loc.update(dt)
+
+        # Update all customers
+        for spawn_loc in self.spawn_locations:
+            for customer in spawn_loc.get_active_customers():
+                customer.update(lift_positions)
+
+    def get_all_customers(self):
+        """Get all customers on this floor"""
+        all_customers = []
+        for spawn_loc in self.spawn_locations:
+            all_customers.extend(spawn_loc.get_active_customers())
+        return all_customers
+
+    def get_spawn_location_x(self):
+        """Get the x position of the spawn location on this floor"""
+        if self.spawn_locations:
+            return self.spawn_locations[0].spawn_x
+        return self.width // 2
+
+    def handle_click(self, mouse_pos):
+        """Handle mouse clicks for customer popups"""
+        for customer in self.get_all_customers():
+            if customer.handle_click(mouse_pos):
+                return customer
+        return None
+
+    def draw(self, screen, draw_popups=False):
+        """Draw the floor (popups drawn separately to be on top)"""
+        if not draw_popups:
+            # Draw floor platform
+            floor_color = (150, 150, 150)
+            pg.draw.rect(screen, floor_color, (0, self.y + self.height - 10, self.width, 10))
+
+            # Draw floor number
+            font = pg.font.Font(None, 24)
+            text = font.render(f"Floor {self.floor_number}", True, (255, 255, 255))
+            screen.blit(text, (10, self.y + 10))
+
+            # Draw spawn location markers (semi-transparent squares)
+            for spawn_loc in self.spawn_locations:
+                # Create a surface with alpha channel
+                square_size = 30
+                square_surface = pg.Surface((square_size, square_size), pg.SRCALPHA)
+                square_surface.fill((255, 255, 0, 50))  # Yellow with alpha=50
+                # Center the square on the spawn location
+                square_x = spawn_loc.spawn_x - square_size // 2
+                square_y = self.y + self.height - square_size - 10
+                screen.blit(square_surface, (square_x, square_y))
+
+            # Draw all customers on this floor (without popups)
+            for customer in self.get_all_customers():
+                if customer.state != "in_lift":
+                    customer.draw(screen, self.y + self.height - 50, draw_popup=False)
+        else:
+            # Only draw popups
+            for customer in self.get_all_customers():
+                if customer.state != "in_lift":
+                    customer.draw(screen, self.y + self.height - 50, draw_popup=True)
+
+    def remove_delivered_customers(self):
+        """Clean up delivered customers"""
+        for spawn_loc in self.spawn_locations:
+            spawn_loc.remove_delivered_customers()
