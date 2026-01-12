@@ -40,11 +40,16 @@ class RandomFloorRequestingCustomer:
         self.assignment_time = None
         self.delivery_time = None
         
-        # Randomly assign penalty attributes variant
-        if random.random() < 0.5:
-            self.penalty_attributes = PenaltyAttributes.variant_1()
-        else:
+        # Randomly assign priority and penalty attributes
+        # 50% chance for high priority
+        self.is_high_priority = random.random() < 0.5
+        
+        if self.is_high_priority:
+            # High priority: variant 2 (apc=3, dpc=4, cipc=2)
             self.penalty_attributes = PenaltyAttributes.variant_2()
+        else:
+            # Normal priority: variant 1 (apc=1, dpc=2, cipc=1)
+            self.penalty_attributes = PenaltyAttributes.variant_1()
 
     def _request_random_floor(self, current_floor, total_floors):
         """Request a random floor different from current floor"""
@@ -159,7 +164,18 @@ class RandomFloorRequestingCustomer:
                 # Let's keep the "delivered" feedback distinct
                 pg.draw.rect(screen, (50, 255, 50), (self.x, self.y, self.width, self.height))
             else:
-                pg.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
+                if self.is_high_priority:
+                    # Draw triangle for high priority
+                    # Points: top-center, bottom-left, bottom-right
+                    points = [
+                        (self.x + self.width // 2, self.y),
+                        (self.x, self.y + self.height),
+                        (self.x + self.width, self.y + self.height)
+                    ]
+                    pg.draw.polygon(screen, self.color, points)
+                else:
+                    # Draw rectangle for normal priority
+                    pg.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
 
     def is_mouse_over_popup(self, mouse_pos):
         """Check if mouse is over the popup"""
