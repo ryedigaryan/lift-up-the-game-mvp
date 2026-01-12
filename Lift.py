@@ -34,6 +34,7 @@ class Lift:
         self.door_timer = 0
         self.door_wait_time = 2.0  # seconds to wait with door open
         self.floors = floors or []  # Reference to floor objects
+        self.stop_list_font = pg.font.Font(None, 18)
 
     def _floor_to_y(self, floor):
         """Convert floor number to Y position (align with floor bottom)"""
@@ -82,6 +83,10 @@ class Lift:
 
         # Find next floor to visit
         next_floor = self._get_next_floor()
+        if next_floor is None:
+            self.state = "idle"
+            return
+            
         target_y = self._floor_to_y(next_floor)
 
         if abs(self.y - target_y) < 5:
@@ -101,92 +106,116 @@ class Lift:
         return set(customer.target_floor for customer in self.customers_inside)
 
     def _get_next_floor(self):
-        """Get the next floor to visit based on prioritization rules"""
+        """Gets the next floor to visit by calling the pure simulation function with current state."""
+        return self._find_best_stop(
+            self.current_floor,
+            self.direction,
+            self.state,
+            set(c.target_floor for c in self.customers_inside),
+            {f: [c.target_floor for c in v] for f, v in self.waiting_customers.items()},
+            self.request_queue
+        )
+
+    def _find_best_stop(self, current_floor, direction, state, delivery_floors, waiting_customers, request_queue):
+        """
+        Pure function to find the best next stop based on the lift's state.
+        This can be used for both real-time decisions and simulations.
+        """
         # Rule 1 & 3: If lift is empty, go to first requested floor in queue
-        if not self.customers_inside:
-            if self.request_queue:
-                return self.request_queue[0]
-            elif self.target_floors:
-                # Fallback if queue is empty but targets exist (shouldn't happen usually)
-                return list(self.target_floors)[0]
+        if not delivery_floors:
+            if request_queue:
+                return request_queue[0]
             else:
-                return self.current_floor
+                return None
 
         # Rule 2: Lift is not empty. Prioritize deliveries and pickups on the way.
-        delivery_floors = self._get_delivery_floors()
-        
-        if self.direction == "up":
-            # Check for deliveries above
-            deliveries_above = [f for f in delivery_floors if f > self.current_floor]
-            
+        if direction == "up":
+            deliveries_above = [f for f in delivery_floors if f > current_floor]
             if deliveries_above:
                 limit = max(deliveries_above)
-                # Pickups on the way: strictly between current and limit
-                # AND customer wants to go UP (target > pickup floor)
-                pickups_on_way = []
-                for f in self.waiting_customers:
-                    if self.current_floor < f <= limit:
-                        # Check if any customer at floor f wants to go UP
-                        if any(c.target_floor > f for c in self.waiting_customers[f]):
-                            pickups_on_way.append(f)
-                            
-                candidates = deliveries_above + pickups_on_way
-                return min(candidates)
-            else:
-                # No deliveries above, check below (switch direction)
-                deliveries_below = [f for f in delivery_floors if f < self.current_floor]
-                if deliveries_below:
-                    limit = min(deliveries_below)
-                    # Pickups on the way: strictly between limit and current
-                    # AND customer wants to go DOWN (target < pickup floor)
-                    pickups_on_way = []
-                    for f in self.waiting_customers:
-                        if limit <= f < self.current_floor:
-                            if any(c.target_floor < f for c in self.waiting_customers[f]):
-                                pickups_on_way.append(f)
-                                
-                    candidates = deliveries_below + pickups_on_way
-                    return max(candidates)
-                else:
-                    return self.current_floor
-
+                pickups_on_way = [f for f, targets in waiting_customers.items() if current_floor < f <= limit and any(t > f for t in targets)]
+                return min(deliveries_above + pickups_on_way)
+            else: # No deliveries above, turn around
+                deliveries_below = [f for f in delivery_floors if f < current_floor]
+                if not deliveries_below: return None
+                limit = min(deliveries_below)
+                pickups_on_way = [f for f, targets in waiting_customers.items() if limit <= f < current_floor and any(t < f for t in targets)]
+                return max(deliveries_below + pickups_on_way)
         else:  # direction == "down"
-            # Check for deliveries below
-            deliveries_below = [f for f in delivery_floors if f < self.current_floor]
-            
+            deliveries_below = [f for f in delivery_floors if f < current_floor]
             if deliveries_below:
                 limit = min(deliveries_below)
-                # Pickups on the way: strictly between limit and current
-                # AND customer wants to go DOWN (target < pickup floor)
-                pickups_on_way = []
-                for f in self.waiting_customers:
-                    if limit <= f < self.current_floor:
-                        if any(c.target_floor < f for c in self.waiting_customers[f]):
-                            pickups_on_way.append(f)
-                            
-                candidates = deliveries_below + pickups_on_way
-                return max(candidates)
-            else:
-                # No deliveries below, check above (switch direction)
-                deliveries_above = [f for f in delivery_floors if f > self.current_floor]
-                if deliveries_above:
-                    limit = max(deliveries_above)
-                    # Pickups on the way: strictly between current and limit
-                    # AND customer wants to go UP (target > pickup floor)
-                    pickups_on_way = []
-                    for f in self.waiting_customers:
-                        if self.current_floor < f <= limit:
-                            if any(c.target_floor > f for c in self.waiting_customers[f]):
-                                pickups_on_way.append(f)
-                                
-                    candidates = deliveries_above + pickups_on_way
-                    return min(candidates)
-                else:
-                    return self.current_floor
+                pickups_on_way = [f for f, targets in waiting_customers.items() if limit <= f < current_floor and any(t < f for t in targets)]
+                return max(deliveries_below + pickups_on_way)
+            else: # No deliveries below, turn around
+                deliveries_above = [f for f in delivery_floors if f > current_floor]
+                if not deliveries_above: return None
+                limit = max(deliveries_above)
+                pickups_on_way = [f for f, targets in waiting_customers.items() if current_floor < f <= limit and any(t > f for t in targets)]
+                return min(deliveries_above + pickups_on_way)
+
+    def get_target_sequence(self, limit=5):
+        """Simulates the lift's next moves to predict a sequence of stops."""
+        if not self.target_floors:
+            return []
+
+        # Create a snapshot of the current state for simulation
+        sim_floor = self.current_floor
+        sim_direction = self.direction
+        sim_state = self.state
+        sim_deliveries = set(c.target_floor for c in self.customers_inside)
+        sim_waiting = {f: [c.target_floor for c in v] for f, v in self.waiting_customers.items()}
+        sim_requests = list(self.request_queue)
+        
+        sequence = []
+        for _ in range(limit):
+            next_stop = self._find_best_stop(sim_floor, sim_direction, sim_state, sim_deliveries, sim_waiting, sim_requests)
+            
+            if next_stop is None:
+                break
+            
+            sequence.append(next_stop)
+
+            # Update simulation state for the next iteration
+            if next_stop > sim_floor:
+                sim_direction = "up"
+            elif next_stop < sim_floor:
+                sim_direction = "down"
+            
+            sim_floor = next_stop
+            sim_state = "moving" # Assume it's always moving for the simulation
+
+            # Simulate drop-offs
+            sim_deliveries.discard(sim_floor)
+            
+            # Simulate pick-ups
+            if sim_floor in sim_waiting:
+                # Based on direction, decide who to pick up
+                pickup_targets = []
+                if sim_direction == "up":
+                    pickup_targets = [t for t in sim_waiting[sim_floor] if t > sim_floor]
+                else: # down
+                    pickup_targets = [t for t in sim_waiting[sim_floor] if t < sim_floor]
+                
+                # If the lift is now empty, it might turn around, so pick up everyone
+                if not sim_deliveries:
+                    pickup_targets = sim_waiting[sim_floor]
+
+                sim_deliveries.update(pickup_targets)
+                # Remove the picked-up requests from waiting list
+                sim_waiting.pop(sim_floor, None)
+                if sim_floor in sim_requests:
+                    sim_requests.remove(sim_floor)
+
+        return sequence
 
     def _move_towards_target(self):
         """Move the lift towards the target floor"""
         next_floor = self._get_next_floor()
+        if next_floor is None:
+            self.state = "idle"
+            return
+            
         target_y = self._floor_to_y(next_floor)
 
         if abs(self.y - target_y) < self.speed:
@@ -209,17 +238,12 @@ class Lift:
         customers_to_remove = []
         for customer in self.customers_inside:
             if customer.target_floor == self.current_floor:
-                # Get the spawn location x for this floor
-                target_spawn_x = self.x + self.width // 2  # Default to lift position
+                target_spawn_x = self.x + self.width // 2
                 if self.floors and self.current_floor < len(self.floors):
                     target_spawn_x = self.floors[self.current_floor].get_spawn_location_x()
-
                 customer.exit_lift(self.current_floor, self.x + self.width // 2, target_spawn_x)
-                
-                # Add customer to the floor's arrived list
                 if self.floors and self.current_floor < len(self.floors):
                     self.floors[self.current_floor].add_customer(customer)
-                    
                 customers_to_remove.append(customer)
 
         for customer in customers_to_remove:
@@ -227,10 +251,7 @@ class Lift:
 
         # Pick up customers
         if self.current_floor in self.waiting_customers:
-            # Determine which customers to pick up based on direction
             customers_to_pickup = []
-            
-            # If we have customers inside, we must respect the current direction
             if self.customers_inside:
                 for customer in self.waiting_customers[self.current_floor]:
                     if customer.state == "waiting_at_lift":
@@ -239,35 +260,21 @@ class Lift:
                         elif self.direction == "down" and customer.target_floor < self.current_floor:
                             customers_to_pickup.append(customer)
             else:
-                # If empty, we pick up everyone (or could implement logic to pick one direction)
-                # For now, pick up everyone to avoid leaving people behind if we switch direction
-                for customer in self.waiting_customers[self.current_floor]:
-                    if customer.state == "waiting_at_lift":
-                        customers_to_pickup.append(customer)
+                customers_to_pickup = [c for c in self.waiting_customers[self.current_floor] if c.state == "waiting_at_lift"]
 
             for customer in customers_to_pickup:
-                # Remove customer from the floor they were on
                 if self.floors and customer.current_floor < len(self.floors):
                     self.floors[customer.current_floor].remove_customer(customer)
-                    
                 customer.enter_lift()
                 self.customers_inside.append(customer)
-                # Add their target floor to our route
                 self.target_floors.add(customer.target_floor)
 
-            # Remove customers who entered from the waiting list
-            self.waiting_customers[self.current_floor] = [
-                c for c in self.waiting_customers[self.current_floor]
-                if c.state != "in_lift"
-            ]
-
+            self.waiting_customers[self.current_floor] = [c for c in self.waiting_customers[self.current_floor] if c.state != "in_lift"]
             if not self.waiting_customers[self.current_floor]:
                 del self.waiting_customers[self.current_floor]
-                # Remove from request queue since we serviced this floor
                 if self.current_floor in self.request_queue:
                     self.request_queue.remove(self.current_floor)
 
-        # Remove current floor from targets only if no more waiting customers
         if self.current_floor not in self.waiting_customers:
             self.target_floors.discard(self.current_floor)
 
@@ -281,14 +288,11 @@ class Lift:
 
     def _close_door_and_continue(self):
         """Close door and continue to next floor"""
-        # Don't close door if customers are still walking to THIS floor
         if self._has_customers_still_walking_to_current_floor():
-            # Reset timer to keep waiting
             self.door_timer = 0
             return
 
         self.door_open = False
-
         if self.target_floors:
             self._start_moving()
         else:
@@ -301,8 +305,9 @@ class Lift:
 
         # Draw lift shaft (light background)
         shaft_color = (200, 200, 200)
-        for floor in range(self.total_floors):
-            floor_y = self._floor_to_y(floor)
+        for floor_num in range(self.total_floors):
+            # Calculate y for the top of the floor's lift door area
+            floor_y = self.top_padding + (self.total_floors - 1 - floor_num) * self.floor_height + self.floor_height - self.height - 10
             pg.draw.rect(screen, shaft_color, (self.x - 5, floor_y, self.width + 10, self.height), 1)
 
         # Draw lift cabin
@@ -325,3 +330,15 @@ class Lift:
             count_font = pg.font.Font(None, 24)
             count_text = count_font.render(f"{len(self.customers_inside)}", True, (255, 255, 255))
             screen.blit(count_text, (self.x + 5, self.y + self.height - 25))
+            
+        # Draw target floor sequence
+        target_sequence = self.get_target_sequence()
+        if target_sequence:
+            # Iterate through the sequence directly. The first element is the next stop.
+            for i, floor_num in enumerate(target_sequence):
+                # Draw from the bottom up. i=0 is the next stop and gets the lowest position.
+                y_offset = self.height - (i * 15) - 15
+                if y_offset < 0: break # Stop if we run out of space in the lift cabin
+                
+                stop_text = self.stop_list_font.render(str(floor_num), True, (255, 255, 255))
+                screen.blit(stop_text, (self.x + self.width - 15, self.y + y_offset))
