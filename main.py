@@ -112,15 +112,15 @@ class LiftUpGame:
         # Check spawn locations
         for spawn_loc in floor.spawn_locations:
             for customer in spawn_loc.spawned_customers:
-                if customer.state == "delivered":
-                    penalty = customer.calculate_penalty()
+                if customer.state == "delivered" and customer.delivery_time is not None:
+                    penalty = customer.calculate_penalty(customer.delivery_time)
                     self.status_bar.add_penalty(penalty)
             spawn_loc.remove_delivered_customers()
             
         # Check arrived customers
         for customer in floor.arrived_customers:
-            if customer.state == "delivered":
-                penalty = customer.calculate_penalty()
+            if customer.state == "delivered" and customer.delivery_time is not None:
+                penalty = customer.calculate_penalty(customer.delivery_time)
                 self.status_bar.add_penalty(penalty)
         
         floor.arrived_customers = [c for c in floor.arrived_customers if c.state != "delivered"]

@@ -52,31 +52,31 @@ class Customer:
         self.is_active = False
         self.assignment_time = pg.time.get_ticks() / 1000.0
 
-    def calculate_penalty(self, current_time=None):
+    def calculate_penalty(self, current_time):
         """
-        Calculate penalty for this customer.
-        If delivery_time is set, it uses that (final penalty).
-        Otherwise, if current_time is provided, it calculates penalty up to that point.
+        Calculate penalty for this customer up to the given current_time.
+        This method can calculate running penalty before assignment, before delivery, and the final penalty.
         """
-        if self.assignment_time is None:
-            return 0.0
-            
         X = self.request_time
         Y = self.assignment_time
-        
-        if self.delivery_time is not None:
-            Z = self.delivery_time
-        elif current_time is not None:
-            Z = current_time
-        else:
-            return 0.0
-        
+        Z = self.delivery_time
+
         apc = self.penalty_attributes.apc
         dpc = self.penalty_attributes.dpc
         cipc = self.penalty_attributes.cipc
+
+        if Y is None:  # Not assigned yet
+            # Penalty is just the waiting part, with Y treated as current_time
+            wait_penalty = (current_time - X) * apc
+            return wait_penalty * cipc
         
-        penalty = ((Y - X) * apc + (Z - Y) * dpc) * cipc
-        return penalty
+        # Assigned, but maybe not delivered
+        assignment_penalty = (Y - X) * apc
+        
+        delivery_end_time = Z if Z is not None else current_time
+        delivery_penalty = (delivery_end_time - Y) * dpc
+        
+        return (assignment_penalty + delivery_penalty) * cipc
 
     def update(self, lift_positions):
         """Update customer state and position"""
