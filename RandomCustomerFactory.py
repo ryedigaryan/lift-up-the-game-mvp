@@ -1,5 +1,5 @@
 import random
-from RandomFloorRequestingCustomer import RandomFloorRequestingCustomer
+from Customer import Customer
 from PenaltyAttributes import PenaltyAttributes
 
 class RandomCustomerFactory:
@@ -16,7 +16,7 @@ class RandomCustomerFactory:
         is_high_priority = random.random() < self.high_priority_prob
 
         # Create and return a customer instance with deterministic properties
-        return RandomFloorRequestingCustomer(
+        return Customer(
             spawn_floor=spawn_floor,
             spawn_x=spawn_x,
             total_floors=total_floors,

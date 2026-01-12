@@ -5,7 +5,7 @@ from ServedCustomerInfoPopup import ServedCustomerInfoPopup
 from PenaltyAttributes import PenaltyAttributes
 
 
-class RandomFloorRequestingCustomer:
+class Customer:
     def __init__(self, spawn_floor, spawn_x, total_floors, floor_width, target_floor, color, popup_offset_y, is_high_priority):
         self.current_floor = spawn_floor
         self.target_floor = target_floor
