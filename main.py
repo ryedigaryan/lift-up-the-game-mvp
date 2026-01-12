@@ -11,9 +11,12 @@ class LiftUpGame:
         # Game constants
         self.NUM_FLOORS = 5
         self.SCREEN_WIDTH = 800
-        self.GAME_HEIGHT = 800  # Height of the game area
+        self.TOP_PADDING = 50  # Added padding to prevent popups going off-screen
+        self.GAME_HEIGHT = 800
         self.STATUS_BAR_HEIGHT = 100
-        self.SCREEN_HEIGHT = self.GAME_HEIGHT + self.STATUS_BAR_HEIGHT
+        self.SCREEN_HEIGHT = self.GAME_HEIGHT + self.STATUS_BAR_HEIGHT + self.TOP_PADDING
+        
+        # Adjust floor height calculation to account for padding
         self.FLOOR_HEIGHT = self.GAME_HEIGHT // self.NUM_FLOORS
 
         # Create screen
@@ -28,7 +31,7 @@ class LiftUpGame:
         self.floors = []
         self.lifts = []
         self.active_popup_customer = None  # Track which customer's popup is active
-        self.status_bar = StatusBar(self.SCREEN_WIDTH, self.STATUS_BAR_HEIGHT, 0, self.GAME_HEIGHT)
+        self.status_bar = StatusBar(self.SCREEN_WIDTH, self.STATUS_BAR_HEIGHT, 0, self.GAME_HEIGHT + self.TOP_PADDING)
 
         self._initialize_game()
 
@@ -39,9 +42,11 @@ class LiftUpGame:
 
         # Create floors (bottom to top)
         for i in range(self.NUM_FLOORS):
+            # Add TOP_PADDING to all y-positions
+            y_pos = self.TOP_PADDING + (self.NUM_FLOORS - 1 - i) * self.FLOOR_HEIGHT
             floor = Floor(
                 floor_number=i,
-                y_position=(self.NUM_FLOORS - 1 - i) * self.FLOOR_HEIGHT,
+                y_position=y_pos,
                 width=self.SCREEN_WIDTH,
                 height=self.FLOOR_HEIGHT,
                 total_floors=self.NUM_FLOORS,
@@ -50,8 +55,8 @@ class LiftUpGame:
             self.floors.append(floor)
 
         # Create lifts in the horizontal center (pass floors for spawn location access)
-        lift_a = Lift("A", center_x - 80, self.NUM_FLOORS, self.FLOOR_HEIGHT, self.floors)
-        lift_b = Lift("B", center_x + 20, self.NUM_FLOORS, self.FLOOR_HEIGHT, self.floors)
+        lift_a = Lift("A", center_x - 80, self.NUM_FLOORS, self.FLOOR_HEIGHT, self.floors, self.TOP_PADDING)
+        lift_b = Lift("B", center_x + 20, self.NUM_FLOORS, self.FLOOR_HEIGHT, self.floors, self.TOP_PADDING)
 
         self.lifts.append(lift_a)
         self.lifts.append(lift_b)

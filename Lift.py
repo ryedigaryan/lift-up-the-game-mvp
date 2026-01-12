@@ -2,7 +2,7 @@ import pygame as pg
 
 
 class Lift:
-    def __init__(self, name, x, total_floors, floor_height, floors=None):
+    def __init__(self, name, x, total_floors, floor_height, floors=None, top_padding=0):
         """
         Initialize a lift
 
@@ -12,6 +12,7 @@ class Lift:
             total_floors: Total number of floors
             floor_height: Height of each floor in pixels
             floors: List of Floor objects (for getting spawn locations)
+            top_padding: Vertical padding at the top of the screen
         """
         self.name = name
         self.x = x
@@ -24,9 +25,10 @@ class Lift:
         self.request_queue = []  # Queue of requested floors (FIFO)
         self.state = "idle"  # idle, waiting, moving_up, moving_down
         self.direction = "up"  # Preferred direction: "up" or "down"
-        self.speed = 2.5  # Increased from 1.5 to 2.5
+        self.speed = 2.5
         self.total_floors = total_floors
         self.floor_height = floor_height
+        self.top_padding = top_padding
         self.y = self._floor_to_y(0)
         self.door_open = False
         self.door_timer = 0
@@ -36,7 +38,8 @@ class Lift:
     def _floor_to_y(self, floor):
         """Convert floor number to Y position (align with floor bottom)"""
         ground_height = 10
-        return (self.total_floors - 1 - floor) * self.floor_height + self.floor_height - ground_height - self.height
+        # Add top_padding to the calculation
+        return self.top_padding + (self.total_floors - 1 - floor) * self.floor_height + self.floor_height - ground_height - self.height
 
     def _y_to_floor(self):
         """Get current floor based on Y position"""

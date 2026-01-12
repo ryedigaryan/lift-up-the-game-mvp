@@ -25,6 +25,7 @@ class Customer:
         self.floor_width = floor_width
         self.wandering_speed = 0.5
         self.wandering_direction = random.choice([-1, 1])
+        self.wandering_range = 30  # Max distance to wander from spawn point
         
         self.color = color
         self.is_high_priority = is_high_priority
@@ -85,13 +86,15 @@ class Customer:
             if not self.is_active:
                 self.x += self.wandering_speed * self.wandering_direction
                 
-                # Bounce off edges (keeping some margin)
-                margin = 50
-                if self.x < margin:
-                    self.x = margin
+                # Bounce off wandering range edges around spawn point
+                left_bound = self.spawn_x - self.wandering_range
+                right_bound = self.spawn_x + self.wandering_range
+                
+                if self.x < left_bound:
+                    self.x = left_bound
                     self.wandering_direction = 1
-                elif self.x > self.floor_width - margin - self.width:
-                    self.x = self.floor_width - margin - self.width
+                elif self.x > right_bound:
+                    self.x = right_bound
                     self.wandering_direction = -1
 
         elif self.state == "walking_to_lift" and self.selected_lift:
