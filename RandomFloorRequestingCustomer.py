@@ -26,8 +26,9 @@ class RandomFloorRequestingCustomer:
         self.wandering_speed = 0.5
         self.wandering_direction = random.choice([-1, 1])
         
-        # Random color
-        self.color = (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
+        # Random color (brighter colors)
+        # Avoid dark colors by setting minimum RGB values higher (e.g., 100-255)
+        self.color = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
         
         # Random popup offset (between 0 and 30 pixels higher)
         offset_y = random.randint(0, 30)
