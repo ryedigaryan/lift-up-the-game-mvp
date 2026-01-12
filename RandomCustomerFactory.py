@@ -11,15 +11,14 @@ class RandomCustomerFactory:
     def generate(self, spawn_floor, spawn_x, total_floors, floor_width):
         # Randomize properties
         target_floor = self._request_random_floor(spawn_floor, total_floors)
-        color = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
-        popup_offset_y = random.randint(0, 30)
+        color = (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
+        popup_offset_y = random.randint(-5, 9)
         is_high_priority = random.random() < self.high_priority_prob
 
         # Create and return a customer instance with deterministic properties
         return Customer(
             spawn_floor=spawn_floor,
             spawn_x=spawn_x,
-            total_floors=total_floors,
             floor_width=floor_width,
             target_floor=target_floor,
             color=color,

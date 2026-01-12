@@ -2,11 +2,12 @@ import pygame as pg
 import random
 from FloorRequestPopup import FloorRequestPopup
 from ServedCustomerInfoPopup import ServedCustomerInfoPopup
+from DeliveredCustomerPopup import DeliveredCustomerPopup
 from PenaltyAttributes import PenaltyAttributes
 
 
 class Customer:
-    def __init__(self, spawn_floor, spawn_x, total_floors, floor_width, target_floor, color, popup_offset_y, is_high_priority):
+    def __init__(self, spawn_floor, spawn_x, floor_width, target_floor, color, popup_offset_y, is_high_priority):
         self.current_floor = spawn_floor
         self.target_floor = target_floor
         self.spawn_x = spawn_x
@@ -25,7 +26,6 @@ class Customer:
         self.floor_width = floor_width
         self.wandering_speed = 0.5
         self.wandering_direction = random.choice([-1, 1])
-        self.wandering_range = 30  # Max distance to wander from spawn point
         
         self.color = color
         self.is_high_priority = is_high_priority
@@ -39,6 +39,7 @@ class Customer:
         # Popups
         self.popup = FloorRequestPopup(self, popup_offset_y)
         self.info_popup = ServedCustomerInfoPopup(self)
+        self.delivered_popup = DeliveredCustomerPopup(self)
 
         # Penalty attributes
         self.request_time = pg.time.get_ticks() / 1000.0
@@ -86,15 +87,13 @@ class Customer:
             if not self.is_active:
                 self.x += self.wandering_speed * self.wandering_direction
                 
-                # Bounce off wandering range edges around spawn point
-                left_bound = self.spawn_x - self.wandering_range
-                right_bound = self.spawn_x + self.wandering_range
-                
-                if self.x < left_bound:
-                    self.x = left_bound
+                # Bounce off edges (keeping some margin)
+                margin = 100
+                if self.x < margin:
+                    self.x = margin
                     self.wandering_direction = 1
-                elif self.x > right_bound:
-                    self.x = right_bound
+                elif self.x > self.floor_width - margin - self.width:
+                    self.x = self.floor_width - margin - self.width
                     self.wandering_direction = -1
 
         elif self.state == "walking_to_lift" and self.selected_lift:
@@ -141,23 +140,22 @@ class Customer:
             return
 
         if draw_popup:
-            # Draw popup
-            if self.show_popup:
+            # Draw the correct popup based on state
+            if self.state == "delivered" or self.state == "exiting_lift":
+                self.delivered_popup.draw(screen)
+            elif self.show_popup:
                 self.popup.draw(screen)
             else:
-                # Draw info popup if lift is assigned (show_popup is False)
                 self.info_popup.draw(screen)
         else:
             # Only draw customer body
             # Change color based on state
-            if self.state == "exiting_lift":
-                # Flash green or just use their color but brighter?
-                # Let's keep the "delivered" feedback distinct
-                pg.draw.rect(screen, (50, 255, 50), (self.x, self.y, self.width, self.height))
+            if self.state == "delivered" or self.state == "exiting_lift":
+                # Use a brighter green to match the delivered popup
+                pg.draw.rect(screen, (144, 238, 144), (self.x, self.y, self.width, self.height))
             else:
                 if self.is_high_priority:
                     # Draw triangle for high priority
-                    # Points: top-center, bottom-left, bottom-right
                     points = [
                         (self.x + self.width // 2, self.y),
                         (self.x, self.y + self.height),
