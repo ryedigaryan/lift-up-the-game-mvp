@@ -1,6 +1,7 @@
 import pygame as pg
 import random
 from FloorRequestPopup import FloorRequestPopup
+from ServedCustomerInfoPopup import ServedCustomerInfoPopup
 from PenaltyAttributes import PenaltyAttributes
 
 
@@ -31,6 +32,7 @@ class RandomFloorRequestingCustomer:
         # Random popup offset (between 0 and 30 pixels higher)
         offset_y = random.randint(0, 30)
         self.popup = FloorRequestPopup(self, offset_y)
+        self.info_popup = ServedCustomerInfoPopup(self)
 
         # Penalty attributes
         self.request_time = pg.time.get_ticks() / 1000.0
@@ -56,14 +58,24 @@ class RandomFloorRequestingCustomer:
         self.is_active = False
         self.assignment_time = pg.time.get_ticks() / 1000.0
 
-    def calculate_penalty(self):
-        """Calculate penalty for this customer"""
-        if self.assignment_time is None or self.delivery_time is None:
+    def calculate_penalty(self, current_time=None):
+        """
+        Calculate penalty for this customer.
+        If delivery_time is set, it uses that (final penalty).
+        Otherwise, if current_time is provided, it calculates penalty up to that point.
+        """
+        if self.assignment_time is None:
             return 0.0
             
         X = self.request_time
         Y = self.assignment_time
-        Z = self.delivery_time
+        
+        if self.delivery_time is not None:
+            Z = self.delivery_time
+        elif current_time is not None:
+            Z = current_time
+        else:
+            return 0.0
         
         apc = self.penalty_attributes.apc
         dpc = self.penalty_attributes.dpc
@@ -104,7 +116,7 @@ class RandomFloorRequestingCustomer:
             if abs(self.x - target_x) < self.speed:
                 self.x = target_x
                 self.state = "delivered"
-                self.delivery_time = pg.time.get_ticks() / 1000.0
+                # delivery_time is now set in exit_lift
             elif self.x < target_x:
                 self.x += self.speed
             else:
@@ -121,6 +133,7 @@ class RandomFloorRequestingCustomer:
             self.current_floor = floor
             self.x = lift_x  # Start at lift position
             self.target_spawn_x = target_spawn_x  # Where to walk to
+            self.delivery_time = pg.time.get_ticks() / 1000.0
 
     def draw(self, screen, y_position, draw_popup=False):
         """Draw the customer"""
@@ -131,8 +144,12 @@ class RandomFloorRequestingCustomer:
             return
 
         if draw_popup:
-            # Only draw popup
-            self.popup.draw(screen)
+            # Draw popup
+            if self.show_popup:
+                self.popup.draw(screen)
+            else:
+                # Draw info popup if lift is assigned (show_popup is False)
+                self.info_popup.draw(screen)
         else:
             # Only draw customer body
             # Change color based on state

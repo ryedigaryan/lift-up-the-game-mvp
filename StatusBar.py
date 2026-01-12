@@ -18,7 +18,7 @@ class StatusBar:
         self.surface.fill((50, 50, 50))  # Dark gray background
         
         # Draw penalty text
-        text = self.font.render(f"Total Penalty: {int(self.total_penalty)}", True, (255, 255, 255))
+        text = self.font.render(f"Total Penalty: {self.total_penalty:.2f}", True, (255, 255, 255))
         text_rect = text.get_rect(center=(self.width // 2, self.height // 2))
         self.surface.blit(text, text_rect)
         
