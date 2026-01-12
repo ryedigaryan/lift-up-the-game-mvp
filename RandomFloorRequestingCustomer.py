@@ -6,9 +6,9 @@ from PenaltyAttributes import PenaltyAttributes
 
 
 class RandomFloorRequestingCustomer:
-    def __init__(self, spawn_floor, spawn_x, total_floors, floor_width):
+    def __init__(self, spawn_floor, spawn_x, total_floors, floor_width, target_floor, color, popup_offset_y, is_high_priority):
         self.current_floor = spawn_floor
-        self.target_floor = self._request_random_floor(spawn_floor, total_floors)
+        self.target_floor = target_floor
         self.spawn_x = spawn_x
         self.x = spawn_x
         self.y = 0  # Will be set by floor
@@ -26,35 +26,23 @@ class RandomFloorRequestingCustomer:
         self.wandering_speed = 0.5
         self.wandering_direction = random.choice([-1, 1])
         
-        # Random color (brighter colors)
-        # Avoid dark colors by setting minimum RGB values higher (e.g., 100-255)
-        self.color = (random.randint(100, 255), random.randint(100, 255), random.randint(100, 255))
+        self.color = color
+        self.is_high_priority = is_high_priority
         
-        # Random popup offset (between 0 and 30 pixels higher)
-        offset_y = random.randint(0, 30)
-        self.popup = FloorRequestPopup(self, offset_y)
+        # Determine penalty attributes based on priority
+        if self.is_high_priority:
+            self.penalty_attributes = PenaltyAttributes.variant_2()
+        else:
+            self.penalty_attributes = PenaltyAttributes.variant_1()
+
+        # Popups
+        self.popup = FloorRequestPopup(self, popup_offset_y)
         self.info_popup = ServedCustomerInfoPopup(self)
 
         # Penalty attributes
         self.request_time = pg.time.get_ticks() / 1000.0
         self.assignment_time = None
         self.delivery_time = None
-        
-        # Randomly assign priority and penalty attributes
-        # 50% chance for high priority
-        self.is_high_priority = random.random() < 0.5
-        
-        if self.is_high_priority:
-            # High priority: variant 2 (apc=3, dpc=4, cipc=2)
-            self.penalty_attributes = PenaltyAttributes.variant_2()
-        else:
-            # Normal priority: variant 1 (apc=1, dpc=2, cipc=1)
-            self.penalty_attributes = PenaltyAttributes.variant_1()
-
-    def _request_random_floor(self, current_floor, total_floors):
-        """Request a random floor different from current floor"""
-        available_floors = [f for f in range(total_floors) if f != current_floor]
-        return random.choice(available_floors)
 
     def select_lift(self, lift_name):
         """Player selects a lift for this customer"""

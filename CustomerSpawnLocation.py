@@ -1,5 +1,5 @@
 import pygame as pg
-from RandomFloorRequestingCustomer import RandomFloorRequestingCustomer
+from RandomCustomerFactory import RandomCustomerFactory
 
 
 class CustomerSpawnLocation:
@@ -24,6 +24,7 @@ class CustomerSpawnLocation:
         self.time_since_start = 0.0
         self.spawned_customers = []
         self.total_spawned_count = 0  # Track total number of customers spawned
+        self.factory = RandomCustomerFactory(high_priority_prob=0.5)
 
     def update(self, dt):
         """
@@ -42,11 +43,11 @@ class CustomerSpawnLocation:
 
             # Spawn missing customers based on total count, not current list length
             while self.total_spawned_count < expected_total_spawns:
-                customer = RandomFloorRequestingCustomer(
-                    self.floor_number,
-                    self.spawn_x,
-                    self.total_floors,
-                    self.floor_width
+                customer = self.factory.generate(
+                    spawn_floor=self.floor_number,
+                    spawn_x=self.spawn_x,
+                    total_floors=self.total_floors,
+                    floor_width=self.floor_width
                 )
                 self.spawned_customers.append(customer)
                 self.total_spawned_count += 1
