@@ -2,13 +2,13 @@ from typing import List, Optional, Dict, Tuple
 import pygame as pg
 import random
 from CustomerSpawnLocation import CustomerSpawnLocation
-from FileCustomerFactory import FileCustomerFactory
+from DeterministicCustomerFactory import DeterministicCustomerFactory
 from RawSpawnLocationData import RawSpawnLocationData
 from Customer import Customer
 
 
 class Floor:
-    def __init__(self, floor_number: int, y_position: int, width: int, height: int, total_floors: int, lift_center_x: int, file_factory: Optional[FileCustomerFactory] = None, spawn_locations_data: Optional[List[RawSpawnLocationData]] = None):
+    def __init__(self, floor_number: int, y_position: int, width: int, height: int, total_floors: int, lift_center_x: int, file_factory: Optional[DeterministicCustomerFactory] = None, spawn_locations_data: Optional[List[RawSpawnLocationData]] = None):
         """
         Initialize a floor
 

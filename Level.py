@@ -4,7 +4,7 @@ from Floor import Floor
 from Lift import Lift
 from RawLevelData import RawLevelData
 from StatusBar import StatusBar
-from FileCustomerFactory import FileCustomerFactory
+from DeterministicCustomerFactory import DeterministicCustomerFactory
 from Customer import Customer
 
 
@@ -36,7 +36,7 @@ class Level:
         self.status_bar = StatusBar(self.screen_width, self.status_bar_height, 0, self.game_height + self.top_padding)
         
         # Load factories
-        self.file_factory = FileCustomerFactory(raw_data.customer_spawns)
+        self.file_factory = DeterministicCustomerFactory(raw_data.customer_spawns)
         
         self._initialize_level()
 

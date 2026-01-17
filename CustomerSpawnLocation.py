@@ -1,12 +1,12 @@
 from typing import Optional, List
 import pygame as pg
 from RandomCustomerFactory import RandomCustomerFactory
-from FileCustomerFactory import FileCustomerFactory
+from DeterministicCustomerFactory import DeterministicCustomerFactory
 from Customer import Customer
 
 
 class CustomerSpawnLocation:
-    def __init__(self, spawn_id: str, floor_number: int, spawn_x: int, total_floors: int, floor_width: int, spawn_interval: float = 60.0, start_time: Optional[float] = None, file_factory: Optional[FileCustomerFactory] = None):
+    def __init__(self, spawn_id: str, floor_number: int, spawn_x: int, total_floors: int, floor_width: int, spawn_interval: float = 60.0, start_time: Optional[float] = None, file_factory: Optional[DeterministicCustomerFactory] = None):
         """
         Initialize customer spawn location
 

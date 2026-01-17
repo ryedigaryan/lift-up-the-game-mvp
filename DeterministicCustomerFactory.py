@@ -5,7 +5,7 @@ from Customer import Customer
 from RawCustomerData import RawCustomerData
 
 
-class FileCustomerFactory:
+class DeterministicCustomerFactory:
     def __init__(self, raw_customer_data_list: List[RawCustomerData]):
         """
         Initializes the factory with pre-loaded raw customer data.
