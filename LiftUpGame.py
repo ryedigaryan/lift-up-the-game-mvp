@@ -5,6 +5,7 @@ from post_level.GameHistoryUpdaterAction import GameHistoryUpdaterAction
 from post_level.CompositePostLevelCompleteAction import CompositePostLevelCompleteAction
 from post_level.LoadNextLevelAction import LoadNextLevelAction
 from post_level.IfElseAction import IfElseAction
+from post_level.GameHistoryShowAction import GameHistoryShowAction
 
 
 class LiftUpGame:
@@ -25,7 +26,7 @@ class LiftUpGame:
         # Clock
         self.clock = pg.time.Clock()
         self.fps = 60
-
+        
         self.levels_loader = LevelsLoader("data/levels")
         self.current_level = None
         self.load_and_set_level(1)
@@ -44,7 +45,8 @@ class LiftUpGame:
             GameHistoryUpdaterAction(level_num),
             IfElseAction(
                 condition=lambda: self.levels_loader.level_exists(level_num + 1),
-                then_action=LoadNextLevelAction(self, self.levels_loader, level_num)
+                then_action=LoadNextLevelAction(self, self.levels_loader, level_num),
+                else_action=GameHistoryShowAction()
             )
         ])
         
