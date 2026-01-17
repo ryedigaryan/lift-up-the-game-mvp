@@ -9,16 +9,15 @@ from RawGameHistoryEntry import RawGameHistoryEntry
 if TYPE_CHECKING:
     from Level import Level
     from LiftUpGame import LiftUpGame
-    from LevelsLoader import LevelsLoader
     from post_level.LoadLevelAction import LoadLevelAction
 
 
 class LevelTransitionAction(PostLevelCompleteAction):
-    def __init__(self, game: LiftUpGame, levels_loader: LevelsLoader, level_num: int, next_level_action: LoadLevelAction):
+    def __init__(self, game: LiftUpGame, level_num: int, next_level_action: LoadLevelAction, replay_action: LoadLevelAction):
         self.game = game
-        self.levels_loader = levels_loader
         self.level_num = level_num
         self.next_level_action = next_level_action
+        self.replay_action = replay_action
         self.persistence = GameHistoryPersistence("data/output")
 
     def execute(self, level: Level):
@@ -67,7 +66,7 @@ class LevelTransitionAction(PostLevelCompleteAction):
                         self.next_level_action.execute(level)
                         running = False
                     elif replay_button_rect.collidepoint(mouse_pos):
-                        self.game.load_and_set_level(self.levels_loader, self.level_num)
+                        self.replay_action.execute(level)
                         running = False
                     elif exit_button_rect.collidepoint(mouse_pos):
                         self.game.current_level = None # Signal game to exit

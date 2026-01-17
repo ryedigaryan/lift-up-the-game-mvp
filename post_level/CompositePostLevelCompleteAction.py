@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 class CompositePostLevelCompleteAction(PostLevelCompleteAction):
-    def __init__(self, actions: List[PostLevelCompleteAction]):
+    def __init__(self, actions: List[PostLevelCompleteAction]) -> None:
         """
         An action that holds and executes a list of other actions.
 

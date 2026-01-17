@@ -41,15 +41,17 @@ class LiftUpGame:
             return
 
         # Create post-level actions
+        next_level_num = level_num + 1
+        
         post_level_actions = CompositePostLevelCompleteAction([
             GameHistoryUpdaterAction(level_num),
             IfElseAction(
-                condition=lambda: levels_loader.level_exists(level_num + 1),
+                condition=lambda: levels_loader.level_exists(next_level_num),
                 then_action=LevelTransitionAction(
-                    self, 
-                    levels_loader, 
-                    level_num, 
-                    LoadLevelAction(self, levels_loader, level_num + 1)
+                    game=self,
+                    level_num=level_num,
+                    next_level_action=LoadLevelAction(self, levels_loader, next_level_num),
+                    replay_action=LoadLevelAction(self, levels_loader, level_num)
                 ),
                 else_action=GameHistoryShowAction()
             )
