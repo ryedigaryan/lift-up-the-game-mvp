@@ -13,19 +13,21 @@ class Customer:
         self.target_floor = target_floor
         self.spawn_x = spawn_x
         self.x = spawn_x
-        self.y = 0  # Will be set by floor
+        self.y = 0
+        self.vx = 0
+        self.vy = 0
         self.width = 20
         self.height = 40
         self.state = "waiting_for_lift_selection"  # waiting_for_lift_selection, walking_to_lift, waiting_at_lift, in_lift, exiting_lift, delivered
         self.selected_lift = None
-        self.speed = 2
+        self.speed = 120  # pixels per second
         self.show_popup = True
         self.target_spawn_x = None  # Will be set when exiting lift
         self.is_active = False  # Is this customer's popup currently active?
         
         # Wandering properties
         self.floor_width = floor_width
-        self.wandering_speed = 0.5
+        self.wandering_speed = 30  # pixels per second
         self.wandering_direction = random.choice([-1, 1])
         
         self.color = color
@@ -46,6 +48,9 @@ class Customer:
         self.request_time = pg.time.get_ticks() / 1000.0
         self.assignment_time = None
         self.delivery_time = None
+
+    def set_y(self, y_position: int):
+        self.y = y_position
 
     def select_lift(self, lift_name: str):
         """Player selects a lift for this customer"""
@@ -81,12 +86,12 @@ class Customer:
         
         return (assignment_penalty + delivery_penalty) * cipc
 
-    def update(self, lift_positions: Dict[str, int]):
-        """Update customer state and position"""
+    def update(self, dt: float, lift_positions: Dict[str, int]):
+        self.vx = 0
         if self.state == "waiting_for_lift_selection":
             # Wander slowly if not active (mouse not hovering over popup)
             if not self.is_active:
-                self.x += self.wandering_speed * self.wandering_direction
+                self.vx = self.wandering_speed * self.wandering_direction
                 
                 # Bounce off edges (keeping some margin)
                 margin = 100
@@ -100,24 +105,21 @@ class Customer:
         elif self.state == "walking_to_lift" and self.selected_lift:
             # Walk towards the selected lift
             target_x = lift_positions[self.selected_lift]
-            if abs(self.x - target_x) < self.speed:
+            if abs(self.x - target_x) < 2: # Snap to position
                 self.x = target_x
                 self.state = "waiting_at_lift"
-            elif self.x < target_x:
-                self.x += self.speed
             else:
-                self.x -= self.speed
+                self.vx = self.speed if self.x < target_x else -self.speed
+                
         elif self.state == "exiting_lift":
             # Walk towards the target floor's spawn location
             target_x = self.target_spawn_x if self.target_spawn_x else self.spawn_x
-            if abs(self.x - target_x) < self.speed:
+            if abs(self.x - target_x) < 2:
                 self.x = target_x
                 self.state = "delivered"
-                # delivery_time is now set in exit_lift
-            elif self.x < target_x:
-                self.x += self.speed
             else:
-                self.x -= self.speed
+                self.vx = self.speed if self.x < target_x else -self.speed
+        self.x += self.vx * dt
 
     def enter_lift(self):
         """Customer enters the lift"""
@@ -132,9 +134,8 @@ class Customer:
             self.target_spawn_x = target_spawn_x  # Where to walk to
             self.delivery_time = pg.time.get_ticks() / 1000.0
 
-    def draw(self, screen: pg.Surface, y_position: int, draw_popup: bool = False):
+    def draw(self, screen: pg.Surface, draw_popup: bool = False):
         """Draw the customer"""
-        self.y = y_position
 
         # Don't draw when in lift
         if self.state == "in_lift":

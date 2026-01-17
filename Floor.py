@@ -19,7 +19,7 @@ class Floor:
             height: Height of the floor
             total_floors: Total number of floors in the game
             lift_center_x: X coordinate of the center between lifts
-            file_factory: Optional FileCustomerFactory instance for file-based spawning
+            file_factory: Optional DeterministicCustomerFactory instance for file-based spawning
             spawn_locations_data: Optional list of RawSpawnLocationData objects for this floor
         """
         self.floor_number = floor_number
@@ -106,13 +106,10 @@ class Floor:
             spawn_loc.update(dt)
 
         # Update all customers
-        for spawn_loc in self.spawn_locations:
-            for customer in spawn_loc.get_active_customers():
-                customer.update(lift_positions)
-                
-        # Update arrived customers
-        for customer in self.arrived_customers:
-            customer.update(lift_positions)
+        customer_y = self.y + self.height - 50
+        for customer in self.get_all_customers():
+            customer.set_y(customer_y)
+            customer.update(dt, lift_positions)
 
     def get_all_customers(self) -> List[Customer]:
         """Get all customers on this floor"""
@@ -137,6 +134,7 @@ class Floor:
         
     def add_customer(self, customer: Customer):
         """Add a customer to this floor (e.g. arrived from lift)"""
+        customer.set_y(self.y + self.height - 50)
         self.arrived_customers.append(customer)
         
     def remove_customer(self, customer: Customer):
@@ -182,12 +180,12 @@ class Floor:
             # Draw all customers on this floor (without popups)
             for customer in self.get_all_customers():
                 if customer.state != "in_lift":
-                    customer.draw(screen, self.y + self.height - 50, draw_popup=False)
+                    customer.draw(screen, draw_popup=False)
         else:
             # Only draw popups
             for customer in self.get_all_customers():
                 if customer.state != "in_lift":
-                    customer.draw(screen, self.y + self.height - 50, draw_popup=True)
+                    customer.draw(screen, draw_popup=True)
 
     def remove_delivered_customers(self):
         """Clean up delivered customers"""

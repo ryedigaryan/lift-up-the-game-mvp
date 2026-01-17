@@ -129,6 +129,11 @@ class Level:
         for floor in self.floors:
             if any(c.state != "delivered" for c in floor.get_all_customers()):
                 return
+                
+        # 3. Check if any lifts still have customers inside
+        for lift in self.lifts:
+            if lift.customers_inside:
+                return
         
         # If we reach here, the level is complete
         self.is_complete = True
@@ -188,11 +193,11 @@ class Level:
         for floor in self.floors:
             for customer in floor.get_all_customers():
                 if customer != self.active_popup_customer and customer.state != "in_lift":
-                    customer.draw(screen, customer.y, draw_popup=True)
+                    customer.draw(screen, draw_popup=True)
 
         # Draw active popup last (on top of everything)
         if self.active_popup_customer:
-            self.active_popup_customer.draw(screen, self.active_popup_customer.y, draw_popup=True)
+            self.active_popup_customer.draw(screen, draw_popup=True)
         
         # Draw status bar
         self.status_bar.draw(screen)
