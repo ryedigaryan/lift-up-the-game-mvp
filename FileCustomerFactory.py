@@ -1,19 +1,22 @@
 import random
 from collections import deque
+from typing import List, Dict, Optional
 from Customer import Customer
+from RawCustomerData import RawCustomerData
+
 
 class FileCustomerFactory:
-    def __init__(self, raw_customer_data_list):
+    def __init__(self, raw_customer_data_list: List[RawCustomerData]):
         """
         Initializes the factory with pre-loaded raw customer data.
         
         Args:
             raw_customer_data_list (list[RawCustomerData]): List of RawCustomerData objects.
         """
-        self.spawns = {}  # Dict[spawn_id, deque of RawCustomerData]
+        self.spawns: Dict[str, deque[RawCustomerData]] = {}
         self._organize_spawns(raw_customer_data_list)
 
-    def _organize_spawns(self, raw_data_list):
+    def _organize_spawns(self, raw_data_list: List[RawCustomerData]):
         for data in raw_data_list:
             if data.spawn_id not in self.spawns:
                 self.spawns[data.spawn_id] = deque()
@@ -23,7 +26,7 @@ class FileCustomerFactory:
         for spawn_id in self.spawns:
             self.spawns[spawn_id] = deque(sorted(self.spawns[spawn_id], key=lambda x: x.timestamp))
 
-    def get_customer(self, spawn_id, current_time, spawn_floor, spawn_x, total_floors, floor_width):
+    def get_customer(self, spawn_id: str, current_time: float, spawn_floor: int, spawn_x: int, total_floors: int, floor_width: int) -> Optional[Customer]:
         """
         Check if there is a customer scheduled to spawn at this location and time.
         Returns a Customer object if yes, None otherwise.

@@ -1,10 +1,14 @@
+from typing import List, Optional, Dict, Tuple
 import pygame as pg
 import random
 from CustomerSpawnLocation import CustomerSpawnLocation
+from FileCustomerFactory import FileCustomerFactory
+from RawSpawnLocationData import RawSpawnLocationData
+from Customer import Customer
 
 
 class Floor:
-    def __init__(self, floor_number, y_position, width, height, total_floors, lift_center_x, file_factory=None, spawn_locations_data=None):
+    def __init__(self, floor_number: int, y_position: int, width: int, height: int, total_floors: int, lift_center_x: int, file_factory: Optional[FileCustomerFactory] = None, spawn_locations_data: Optional[List[RawSpawnLocationData]] = None):
         """
         Initialize a floor
 
@@ -24,7 +28,7 @@ class Floor:
         self.height = height
         self.total_floors = total_floors
         self.file_factory = file_factory
-        self.spawn_locations = []
+        self.spawn_locations: List[CustomerSpawnLocation] = []
         
         if spawn_locations_data:
             self._create_spawn_locations_from_data(spawn_locations_data)
@@ -32,9 +36,9 @@ class Floor:
             self._create_random_spawn_location(lift_center_x)
         
         # Customers that arrived from other floors
-        self.arrived_customers = []
+        self.arrived_customers: List[Customer] = []
 
-    def _create_spawn_locations_from_data(self, data):
+    def _create_spawn_locations_from_data(self, data: List[RawSpawnLocationData]):
         """Create spawn locations from a list of RawSpawnLocationData objects"""
         # Sort by X to assign IDs correctly
         sorted_data = sorted(data, key=lambda d: d.x)
@@ -53,7 +57,7 @@ class Floor:
             )
             self.spawn_locations.append(spawn_loc)
 
-    def _create_random_spawn_location(self, lift_center_x):
+    def _create_random_spawn_location(self, lift_center_x: int):
         """Create a single random spawn location far from lifts (legacy)"""
         # Define exclusion zone around lifts (200 pixels wide)
         lift_zone_left = lift_center_x - 100
@@ -95,7 +99,7 @@ class Floor:
         )
         self.spawn_locations.append(spawn_loc)
 
-    def update(self, dt, lift_positions):
+    def update(self, dt: float, lift_positions: Dict[str, int]):
         """Update floor and all spawn locations"""
         # Update spawn locations
         for spawn_loc in self.spawn_locations:
@@ -110,7 +114,7 @@ class Floor:
         for customer in self.arrived_customers:
             customer.update(lift_positions)
 
-    def get_all_customers(self):
+    def get_all_customers(self) -> List[Customer]:
         """Get all customers on this floor"""
         all_customers = []
         for spawn_loc in self.spawn_locations:
@@ -118,24 +122,24 @@ class Floor:
         all_customers.extend(self.arrived_customers)
         return all_customers
 
-    def get_spawn_location_x(self):
+    def get_spawn_location_x(self) -> int:
         """Get the x position of the spawn location on this floor"""
         if self.spawn_locations:
             return self.spawn_locations[0].spawn_x
         return self.width // 2
 
-    def handle_click(self, mouse_pos):
+    def handle_click(self, mouse_pos: Tuple[int, int]) -> Optional[Customer]:
         """Handle mouse clicks for customer popups"""
         for customer in self.get_all_customers():
             if customer.handle_click(mouse_pos):
                 return customer
         return None
         
-    def add_customer(self, customer):
+    def add_customer(self, customer: Customer):
         """Add a customer to this floor (e.g. arrived from lift)"""
         self.arrived_customers.append(customer)
         
-    def remove_customer(self, customer):
+    def remove_customer(self, customer: Customer):
         """Remove a customer from this floor"""
         # Try to remove from spawn locations
         for spawn_loc in self.spawn_locations:
@@ -147,7 +151,7 @@ class Floor:
         if customer in self.arrived_customers:
             self.arrived_customers.remove(customer)
 
-    def draw(self, screen, draw_popups=False):
+    def draw(self, screen: pg.Surface, draw_popups: bool = False):
         """Draw the floor (popups drawn separately to be on top)"""
         if not draw_popups:
             # Draw floor platform

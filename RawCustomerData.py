@@ -1,5 +1,5 @@
 class RawCustomerData:
-    def __init__(self, timestamp, spawn_id, priority, target_floor):
+    def __init__(self, timestamp: float, spawn_id: str, priority: str, target_floor: int):
         """
         Holds raw data for a single customer spawn event.
 

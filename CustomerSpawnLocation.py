@@ -1,9 +1,12 @@
+from typing import Optional, List
 import pygame as pg
 from RandomCustomerFactory import RandomCustomerFactory
+from FileCustomerFactory import FileCustomerFactory
+from Customer import Customer
 
 
 class CustomerSpawnLocation:
-    def __init__(self, spawn_id, floor_number, spawn_x, total_floors, floor_width, spawn_interval=60.0, start_time=None, file_factory=None):
+    def __init__(self, spawn_id: str, floor_number: int, spawn_x: int, total_floors: int, floor_width: int, spawn_interval: float = 60.0, start_time: Optional[float] = None, file_factory: Optional[FileCustomerFactory] = None):
         """
         Initialize customer spawn location
 
@@ -31,10 +34,10 @@ class CustomerSpawnLocation:
         self.random_factory = RandomCustomerFactory(high_priority_prob=0.5)
         
         self.time_since_start = 0.0
-        self.spawned_customers = []
+        self.spawned_customers: List[Customer] = []
         self.total_spawned_count = 0
 
-    def update(self, dt):
+    def update(self, dt: float):
         """
         Update spawn timer and spawn customers if needed
 
@@ -72,11 +75,11 @@ class CustomerSpawnLocation:
                     self.spawned_customers.append(customer)
                     self.total_spawned_count += 1
 
-    def get_active_customers(self):
+    def get_active_customers(self) -> List[Customer]:
         """Get list of customers that haven't been delivered yet"""
         return [c for c in self.spawned_customers if c.state != "delivered"]
 
-    def get_all_customers(self):
+    def get_all_customers(self) -> List[Customer]:
         """Get all spawned customers"""
         return self.spawned_customers
 

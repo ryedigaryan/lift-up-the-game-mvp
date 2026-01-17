@@ -1,5 +1,10 @@
+from typing import List, Dict
+from RawCustomerData import RawCustomerData
+from RawSpawnLocationData import RawSpawnLocationData
+
+
 class RawLevelData:
-    def __init__(self, customer_spawns, spawn_locations, num_floors=5):
+    def __init__(self, customer_spawns: List[RawCustomerData], spawn_locations: Dict[int, List[RawSpawnLocationData]], num_floors: int = 5):
         """
         Holds the raw data required to initialize a Level.
 

@@ -1,17 +1,20 @@
+from typing import List, Dict, Optional, Set
 import pygame as pg
+from Customer import Customer
+from Floor import Floor
 
 
 class Lift:
-    def __init__(self, name, x, total_floors, floor_height, floors=None, top_padding=0):
+    def __init__(self, name: str, x: int, total_floors: int, floor_height: int, floors: Optional[List[Floor]] = None, top_padding: int = 0):
         self.name = name
         self.x = x
         self.width = 60
         self.height = 80
         self.current_floor = 0
-        self.customers_inside = []
-        self.waiting_customers = {}
-        self.request_queue = []
-        self.state = "idle"
+        self.customers_inside: List[Customer] = []
+        self.waiting_customers: Dict[int, List[Customer]] = {}
+        self.request_queue: List[int] = []
+        self.state = "idle"  # "idle", "moving_up", "moving_down", "waiting"
         self.direction = "up"
         self.speed = 2.5
         self.total_floors = total_floors
@@ -19,24 +22,24 @@ class Lift:
         self.top_padding = top_padding
         self.y = self._floor_to_y(0)
         self.door_open = False
-        self.door_timer = 0
+        self.door_timer = 0.0
         self.door_wait_time = 2.0
-        self.floors = floors or []
+        self.floors: List[Floor] = floors or []
         self.stop_list_font = pg.font.Font(None, 18)
-        self.target_sequence = []
+        self.target_sequence: List[int] = []
 
-    def _floor_to_y(self, floor):
+    def _floor_to_y(self, floor: int) -> int:
         ground_height = 10
         return self.top_padding + (self.total_floors - 1 - floor) * self.floor_height + self.floor_height - ground_height - self.height
 
-    def _y_to_floor(self):
+    def _y_to_floor(self) -> int:
         for floor in range(self.total_floors):
             floor_y = self._floor_to_y(floor)
             if abs(self.y - floor_y) < 5:
                 return floor
         return self.current_floor
 
-    def add_customer_request(self, customer):
+    def add_customer_request(self, customer: Customer):
         if customer.current_floor not in self.waiting_customers:
             self.waiting_customers[customer.current_floor] = []
         if customer.current_floor not in self.request_queue:
@@ -49,7 +52,7 @@ class Lift:
         else:
             self._update_target_sequence()
 
-    def update(self, dt):
+    def update(self, dt: float):
         if self.state == "idle":
             if self.target_sequence:
                 self._start_moving()
@@ -86,11 +89,11 @@ class Lift:
                 self.state = "moving_down"
                 self.direction = "down"
 
-    def _get_next_floor(self):
+    def _get_next_floor(self) -> Optional[int]:
         """The next floor is simply the first one in our sequence."""
         return self.target_sequence[0] if self.target_sequence else None
 
-    def _find_best_stop(self, current_floor, direction, delivery_floors, waiting_customers, request_queue):
+    def _find_best_stop(self, current_floor: int, direction: str, delivery_floors: Set[int], waiting_customers: Dict[int, List[int]], request_queue: List[int]) -> Optional[int]:
         """Pure function to find the single best next stop."""
         if not delivery_floors:
             return request_queue[0] if request_queue else None
@@ -220,7 +223,7 @@ class Lift:
 
         self._update_target_sequence()
 
-    def _has_customers_still_walking_to_current_floor(self):
+    def _has_customers_still_walking_to_current_floor(self) -> bool:
         if self.current_floor in self.waiting_customers:
             return any(c.state == "walking_to_lift" for c in self.waiting_customers[self.current_floor])
         return False
@@ -236,7 +239,7 @@ class Lift:
         else:
             self._set_idle()
 
-    def draw(self, screen):
+    def draw(self, screen: pg.Surface):
         color = (100, 200, 100) if self.name == "A" else (200, 100, 100)
         shaft_color = (200, 200, 200)
         for floor_num in range(self.total_floors):

@@ -1,14 +1,15 @@
 import random
+from typing import Optional
 from Customer import Customer
-from PenaltyAttributes import PenaltyAttributes
+
 
 class RandomCustomerFactory:
-    def __init__(self, high_priority_prob=0.5, seed=None):
+    def __init__(self, high_priority_prob: float = 0.5, seed: Optional[int] = None):
         self.high_priority_prob = high_priority_prob
         if seed:
             random.seed(seed)
 
-    def generate(self, spawn_floor, spawn_x, total_floors, floor_width):
+    def generate(self, spawn_floor: int, spawn_x: int, total_floors: int, floor_width: int) -> Customer:
         # Randomize properties
         target_floor = self._request_random_floor(spawn_floor, total_floors)
         color = (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
@@ -26,7 +27,7 @@ class RandomCustomerFactory:
             is_high_priority=is_high_priority
         )
 
-    def _request_random_floor(self, current_floor, total_floors):
+    def _request_random_floor(self, current_floor: int, total_floors: int) -> int:
         """Request a random floor different from current floor"""
         available_floors = [f for f in range(total_floors) if f != current_floor]
         return random.choice(available_floors)

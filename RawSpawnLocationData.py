@@ -1,5 +1,5 @@
 class RawSpawnLocationData:
-    def __init__(self, floor_number, x):
+    def __init__(self, floor_number: int, x: int):
         """
         Holds raw data for a single spawn location.
 

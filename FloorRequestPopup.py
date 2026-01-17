@@ -1,8 +1,12 @@
 import pygame as pg
+from typing import TYPE_CHECKING, Tuple
+
+if TYPE_CHECKING:
+    from Customer import Customer
 
 
 class FloorRequestPopup:
-    def __init__(self, customer, offset_y=0):
+    def __init__(self, customer: Customer, offset_y: int = 0):
         self.customer = customer
         self.popup_width = 180  # Increased width for new layout
         self.popup_height = 100
@@ -13,13 +17,13 @@ class FloorRequestPopup:
         self.button_font = pg.font.Font(None, 24)
         self.circle_font = pg.font.Font(None, 28)
 
-    def get_popup_rect(self):
+    def get_popup_rect(self) -> Tuple[int, int, int, int]:
         """Get the popup rectangle"""
         popup_x = self.customer.x - self.popup_width // 2 + self.customer.width // 2
         popup_y = self.customer.y - self.popup_height - 5 - self.offset_y
         return popup_x, popup_y, self.popup_width, self.popup_height
 
-    def is_mouse_over(self, mouse_pos):
+    def is_mouse_over(self, mouse_pos: Tuple[int, int]) -> bool:
         """Check if mouse is over the popup"""
         if not self.customer.show_popup or self.customer.state != "waiting_for_lift_selection":
             return False
@@ -28,7 +32,7 @@ class FloorRequestPopup:
         mx, my = mouse_pos
         return popup_x <= mx <= popup_x + popup_width and popup_y <= my <= popup_y + popup_height
 
-    def handle_click(self, mouse_pos):
+    def handle_click(self, mouse_pos: Tuple[int, int]) -> bool:
         """Handle mouse click on popup buttons"""
         if not self.customer.show_popup or self.customer.state != "waiting_for_lift_selection":
             return False
@@ -54,7 +58,7 @@ class FloorRequestPopup:
 
         return False
 
-    def draw(self, screen):
+    def draw(self, screen: pg.Surface):
         """Draw the popup"""
         if not self.customer.show_popup or self.customer.state != "waiting_for_lift_selection":
             return

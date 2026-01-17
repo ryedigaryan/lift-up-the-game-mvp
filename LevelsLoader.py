@@ -1,12 +1,13 @@
 import csv
 import os
+from typing import List, Dict
 from RawLevelData import RawLevelData
 from RawCustomerData import RawCustomerData
 from RawSpawnLocationData import RawSpawnLocationData
 
 
 class LevelsLoader:
-    def __init__(self, levels_root_path):
+    def __init__(self, levels_root_path: str):
         """
         Initializes the LevelsLoader.
 
@@ -15,7 +16,7 @@ class LevelsLoader:
         """
         self.levels_root_path = levels_root_path
 
-    def load(self, level_name):
+    def load(self, level_name: str) -> RawLevelData:
         """
         Loads a level by name.
 
@@ -46,9 +47,9 @@ class LevelsLoader:
             num_floors=5
         )
 
-    def _load_spawn_locations(self, file_path):
+    def _load_spawn_locations(self, file_path: str) -> Dict[int, List[RawSpawnLocationData]]:
         """Loads spawn location data from a CSV file."""
-        locations = {}
+        locations: Dict[int, List[RawSpawnLocationData]] = {}
         try:
             with open(file_path, 'r') as f:
                 reader = csv.DictReader(f)
@@ -63,9 +64,9 @@ class LevelsLoader:
             raise e
         return locations
 
-    def _load_customer_spawns(self, file_path):
+    def _load_customer_spawns(self, file_path: str) -> List[RawCustomerData]:
         """Loads customer spawn data from a CSV file."""
-        spawns = []
+        spawns: List[RawCustomerData] = []
         try:
             with open(file_path, 'r') as f:
                 reader = csv.DictReader(f)

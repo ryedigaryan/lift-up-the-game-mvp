@@ -1,13 +1,15 @@
+from typing import List, Optional, Tuple
 import pygame as pg
 from Floor import Floor
 from Lift import Lift
 from RawLevelData import RawLevelData
 from StatusBar import StatusBar
 from FileCustomerFactory import FileCustomerFactory
+from Customer import Customer
 
 
 class Level:
-    def __init__(self, raw_data, screen_width, game_height, top_padding, status_bar_height):
+    def __init__(self, raw_data: RawLevelData, screen_width: int, game_height: int, top_padding: int, status_bar_height: int):
         """
         Represents a single game level.
 
@@ -28,9 +30,9 @@ class Level:
         self.floor_height = self.game_height // self.num_floors
         
         # Game objects
-        self.floors = []
-        self.lifts = []
-        self.active_popup_customer = None
+        self.floors: List[Floor] = []
+        self.lifts: List[Lift] = []
+        self.active_popup_customer: Optional[Customer] = None
         self.status_bar = StatusBar(self.screen_width, self.status_bar_height, 0, self.game_height + self.top_padding)
         
         # Load factories
@@ -64,7 +66,7 @@ class Level:
         lift_b = Lift("B", center_x + 20, self.num_floors, self.floor_height, self.floors, self.top_padding)
         self.lifts.extend([lift_a, lift_b])
 
-    def handle_click(self, mouse_pos):
+    def handle_click(self, mouse_pos: Tuple[int, int]) -> bool:
         """Handle mouse clicks within the level."""
         # Only handle click for the active popup customer if one exists
         if self.active_popup_customer:
@@ -81,7 +83,7 @@ class Level:
                 return True
         return False
 
-    def update(self, dt):
+    def update(self, dt: float):
         """Update level state."""
         # Get lift positions for customer pathfinding
         lift_positions = {lift.name: lift.x + lift.width // 2 for lift in self.lifts}
@@ -101,7 +103,7 @@ class Level:
         # Update active popup based on mouse position
         self._update_active_popup()
 
-    def _process_delivered_customers(self, floor):
+    def _process_delivered_customers(self, floor: Floor):
         """Process delivered customers to calculate penalty and remove them."""
         # Check spawn locations
         for spawn_loc in floor.spawn_locations:
@@ -140,7 +142,7 @@ class Level:
                         self.active_popup_customer.is_active = True
                         return
 
-    def draw(self, screen):
+    def draw(self, screen: pg.Surface):
         """Draw the level."""
         # Draw lifts first (so customers appear in front)
         for lift in self.lifts:

@@ -1,3 +1,4 @@
+from typing import Tuple, Dict
 import pygame as pg
 import random
 from FloorRequestPopup import FloorRequestPopup
@@ -7,7 +8,7 @@ from PenaltyAttributes import PenaltyAttributes
 
 
 class Customer:
-    def __init__(self, spawn_floor, spawn_x, floor_width, target_floor, color, popup_offset_y, is_high_priority):
+    def __init__(self, spawn_floor: int, spawn_x: int, floor_width: int, target_floor: int, color: Tuple[int, int, int], popup_offset_y: int, is_high_priority: bool):
         self.current_floor = spawn_floor
         self.target_floor = target_floor
         self.spawn_x = spawn_x
@@ -46,7 +47,7 @@ class Customer:
         self.assignment_time = None
         self.delivery_time = None
 
-    def select_lift(self, lift_name):
+    def select_lift(self, lift_name: str):
         """Player selects a lift for this customer"""
         self.selected_lift = lift_name
         self.state = "walking_to_lift"
@@ -54,7 +55,7 @@ class Customer:
         self.is_active = False
         self.assignment_time = pg.time.get_ticks() / 1000.0
 
-    def calculate_penalty(self, current_time):
+    def calculate_penalty(self, current_time: float) -> float:
         """
         Calculate penalty for this customer up to the given current_time.
         This method can calculate running penalty before assignment, before delivery, and the final penalty.
@@ -80,7 +81,7 @@ class Customer:
         
         return (assignment_penalty + delivery_penalty) * cipc
 
-    def update(self, lift_positions):
+    def update(self, lift_positions: Dict[str, int]):
         """Update customer state and position"""
         if self.state == "waiting_for_lift_selection":
             # Wander slowly if not active (mouse not hovering over popup)
@@ -122,7 +123,7 @@ class Customer:
         """Customer enters the lift"""
         self.state = "in_lift"
 
-    def exit_lift(self, floor, lift_x, target_spawn_x):
+    def exit_lift(self, floor: int, lift_x: int, target_spawn_x: int):
         """Customer exits the lift at target floor"""
         if floor == self.target_floor:
             self.state = "exiting_lift"
@@ -131,7 +132,7 @@ class Customer:
             self.target_spawn_x = target_spawn_x  # Where to walk to
             self.delivery_time = pg.time.get_ticks() / 1000.0
 
-    def draw(self, screen, y_position, draw_popup=False):
+    def draw(self, screen: pg.Surface, y_position: int, draw_popup: bool = False):
         """Draw the customer"""
         self.y = y_position
 
@@ -166,10 +167,10 @@ class Customer:
                     # Draw rectangle for normal priority
                     pg.draw.rect(screen, self.color, (self.x, self.y, self.width, self.height))
 
-    def is_mouse_over_popup(self, mouse_pos):
+    def is_mouse_over_popup(self, mouse_pos: Tuple[int, int]) -> bool:
         """Check if mouse is over the popup"""
         return self.popup.is_mouse_over(mouse_pos)
 
-    def handle_click(self, mouse_pos):
+    def handle_click(self, mouse_pos: Tuple[int, int]) -> bool:
         """Handle mouse click on popup buttons"""
         return self.popup.handle_click(mouse_pos)

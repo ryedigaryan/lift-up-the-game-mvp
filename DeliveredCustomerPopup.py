@@ -1,15 +1,19 @@
 import pygame as pg
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Customer import Customer
 
 
 class DeliveredCustomerPopup:
-    def __init__(self, customer):
+    def __init__(self, customer: Customer):
         self.customer = customer
         self.width = 120
         self.height = 45
         self.font = pg.font.Font(None, 18)
         self.background_color = (144, 238, 144)  # Brighter green (lightgreen)
 
-    def draw(self, screen):
+    def draw(self, screen: pg.Surface):
         # This popup is only for the final state, so calculations are based on set times
         if self.customer.delivery_time is None:
             return

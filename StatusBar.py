@@ -2,7 +2,7 @@ import pygame as pg
 
 
 class StatusBar:
-    def __init__(self, width, height, x, y):
+    def __init__(self, width: int, height: int, x: int, y: int):
         self.width = width
         self.height = height
         self.x = x
@@ -11,10 +11,10 @@ class StatusBar:
         self.total_penalty = 0.0
         self.font = pg.font.Font(None, 36)
 
-    def add_penalty(self, penalty):
+    def add_penalty(self, penalty: float):
         self.total_penalty += penalty
 
-    def draw(self, screen):
+    def draw(self, screen: pg.Surface):
         self.surface.fill((50, 50, 50))  # Dark gray background
         
         # Draw penalty text

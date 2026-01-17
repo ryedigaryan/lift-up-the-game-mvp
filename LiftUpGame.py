@@ -1,7 +1,6 @@
 import pygame as pg
 from Level import Level
 from LevelsLoader import LevelsLoader
-from RawLevelData import RawLevelData
 
 
 class LiftUpGame:
@@ -38,7 +37,7 @@ class LiftUpGame:
             status_bar_height=self.STATUS_BAR_HEIGHT
         )
 
-    def handle_events(self):
+    def handle_events(self) -> bool:
         """Handle pygame events"""
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -50,7 +49,7 @@ class LiftUpGame:
 
         return True
 
-    def update(self, dt):
+    def update(self, dt: float):
         """Update game state"""
         self.current_level.update(dt)
 

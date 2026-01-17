@@ -1,15 +1,19 @@
 import pygame as pg
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Customer import Customer
 
 
 class ServedCustomerInfoPopup:
-    def __init__(self, customer):
+    def __init__(self, customer: Customer):
         self.customer = customer
         self.width = 150  # Increased width for new layout
         self.height = 60
         self.font = pg.font.Font(None, 18)
         self.circle_font = pg.font.Font(None, 28)
 
-    def draw(self, screen):
+    def draw(self, screen: pg.Surface):
         # Don't draw if customer is in lift
         if self.customer.state == "in_lift":
             return
