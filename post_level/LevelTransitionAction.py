@@ -8,10 +8,19 @@ from GameHistoryPersistence import GameHistoryPersistence
 if TYPE_CHECKING:
     from Level import Level
     from LiftUpGame import LiftUpGame
+    from post_level.ExitAction import ExitAction
 
 
 class LevelTransitionAction(PostLevelCompleteAction):
-    def __init__(self, game: LiftUpGame, level_num: int, persistence: GameHistoryPersistence, next_level_action: Optional[PostLevelCompleteAction], replay_action: PostLevelCompleteAction, level_select_action: PostLevelCompleteAction, game_history_show_action: PostLevelCompleteAction):
+    def __init__(self,
+                 game: LiftUpGame,
+                 level_num: int,
+                 persistence: GameHistoryPersistence,
+                 next_level_action: Optional[PostLevelCompleteAction],
+                 replay_action: PostLevelCompleteAction,
+                 level_select_action: PostLevelCompleteAction,
+                 game_history_show_action: PostLevelCompleteAction,
+                 exit_action: PostLevelCompleteAction):
         self.game = game
         self.level_num = level_num
         self.persistence = persistence
@@ -19,6 +28,7 @@ class LevelTransitionAction(PostLevelCompleteAction):
         self.replay_action = replay_action
         self.level_select_action = level_select_action
         self.game_history_show_action = game_history_show_action
+        self.exit_action = exit_action
 
     def execute(self, level: Level):
         screen = pg.display.get_surface()
@@ -38,7 +48,7 @@ class LevelTransitionAction(PostLevelCompleteAction):
             buttons.append(("Level Select", PURPLE, self.level_select_action))
         buttons.append(("Replay", BLUE, self.replay_action))
         buttons.append(("Show History", GREY, self.game_history_show_action))
-        buttons.append(("Exit", RED, None))
+        buttons.append(("Exit", RED, self.exit_action))
 
         total_width = len(buttons) * button_width + (len(buttons) - 1) * 20
         start_x = (screen.get_width() - total_width) / 2
@@ -48,15 +58,12 @@ class LevelTransitionAction(PostLevelCompleteAction):
         while running:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
-                    self.game.current_level = None
+                    self.exit_action.execute(level)
                     running = False
                 if event.type == pg.MOUSEBUTTONDOWN:
                     for rect, _, _, action in button_rects:
                         if rect.collidepoint(event.pos):
-                            if action:
-                                action.execute(level)
-                            else:
-                                self.game.current_level = None
+                            action.execute(level)
                             running = False
                             break
             

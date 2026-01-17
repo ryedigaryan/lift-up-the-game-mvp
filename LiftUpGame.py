@@ -8,6 +8,7 @@ from post_level.LoadLevelAction import LoadLevelAction
 from post_level.NoopAction import NoopAction
 from post_level.LevelTransitionAction import LevelTransitionAction
 from post_level.GameHistoryShowAction import GameHistoryShowAction
+from post_level.ExitAction import ExitAction
 
 
 class LiftUpGame:
@@ -27,6 +28,7 @@ class LiftUpGame:
         
         self.game_history_persistence = GameHistoryPersistence("data/output")
         self.current_level = None
+        self.has_exited = False
         self.load_and_set_level(LevelsLoader("data/levels"), 1)
 
     def load_and_set_level(self, levels_loader: LevelsLoader, level_num: int):
@@ -35,7 +37,7 @@ class LiftUpGame:
         """
         if not levels_loader.level_exists(level_num):
             print(f"Attempted to load level '{level_num}', but it does not exist or is incomplete. Game will end.")
-            self.current_level = None
+            self.exit()
             return
 
         # Create post-level actions
@@ -50,7 +52,8 @@ class LiftUpGame:
                 next_level_action=LoadLevelAction(self, levels_loader, next_level_num) if levels_loader.level_exists(next_level_num) else None,
                 replay_action=LoadLevelAction(self, levels_loader, level_num),
                 level_select_action=NoopAction(),
-                game_history_show_action=GameHistoryShowAction(self.game_history_persistence)
+                game_history_show_action=GameHistoryShowAction(self, self.game_history_persistence, NoopAction(), ExitAction(self)),
+                exit_action=ExitAction(self)
             )
         ])
         
@@ -64,24 +67,18 @@ class LiftUpGame:
             post_level_action=post_level_actions
         )
 
-    def handle_events(self) -> bool:
-        """Handle pygame events"""
-        if not self.current_level:
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    return False
-            return True
+    def exit(self):
+        """Signals the game to exit by setting the has_exited flag to True."""
+        self.has_exited = True
 
+    def handle_events(self):
+        """Handle pygame events"""
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                return False
-
-            if event.type == pg.MOUSEBUTTONDOWN:
+                self.exit()
+            elif self.current_level and event.type == pg.MOUSEBUTTONDOWN:
                 mouse_pos = pg.mouse.get_pos()
-                if self.current_level:
-                    self.current_level.handle_click(mouse_pos)
-
-        return True
+                self.current_level.handle_click(mouse_pos)
 
     def update(self):
         """Update game state"""
@@ -104,12 +101,8 @@ class LiftUpGame:
 
     def run(self):
         """Main game loop"""
-        running = True
-        while running:
-            running = self.handle_events()
-            if not self.current_level:
-                running = False # End game if no more levels
-
+        while not self.has_exited:
+            self.handle_events()
             self.update()
             self.draw()
         pg.quit()
