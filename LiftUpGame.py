@@ -1,6 +1,7 @@
 import pygame as pg
 from Level import Level
 from LevelsLoader import LevelsLoader
+from RawLevelData import RawLevelData
 
 
 class LiftUpGame:

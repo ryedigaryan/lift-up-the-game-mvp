@@ -16,7 +16,7 @@ class Floor:
             total_floors: Total number of floors in the game
             lift_center_x: X coordinate of the center between lifts
             file_factory: Optional FileCustomerFactory instance for file-based spawning
-            spawn_locations_data: Optional list of spawn location data for this floor
+            spawn_locations_data: Optional list of RawSpawnLocationData objects for this floor
         """
         self.floor_number = floor_number
         self.y = y_position
@@ -35,13 +35,13 @@ class Floor:
         self.arrived_customers = []
 
     def _create_spawn_locations_from_data(self, data):
-        """Create spawn locations from a list of data dicts"""
+        """Create spawn locations from a list of RawSpawnLocationData objects"""
         # Sort by X to assign IDs correctly
-        sorted_data = sorted(data, key=lambda d: d['X'])
+        sorted_data = sorted(data, key=lambda d: d.x)
         
         for i, loc_data in enumerate(sorted_data):
             spawn_id = f"{self.floor_number}-{i+1}"
-            spawn_x = loc_data['X']
+            spawn_x = loc_data.x
             
             spawn_loc = CustomerSpawnLocation(
                 spawn_id,

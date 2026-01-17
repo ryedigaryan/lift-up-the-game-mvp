@@ -1,6 +1,7 @@
 import pygame as pg
 from Floor import Floor
 from Lift import Lift
+from RawLevelData import RawLevelData
 from StatusBar import StatusBar
 from FileCustomerFactory import FileCustomerFactory
 
@@ -33,7 +34,7 @@ class Level:
         self.status_bar = StatusBar(self.screen_width, self.status_bar_height, 0, self.game_height + self.top_padding)
         
         # Load factories
-        self.file_factory = FileCustomerFactory(raw_data.customer_spawns_path)
+        self.file_factory = FileCustomerFactory(raw_data.customer_spawns)
         
         self._initialize_level()
 
@@ -44,7 +45,7 @@ class Level:
         # Create floors
         for i in range(self.num_floors):
             y_pos = self.top_padding + (self.num_floors - 1 - i) * self.floor_height
-            floor_spawn_data = self.raw_data.spawn_locations_data.get(i)
+            floor_spawn_data = self.raw_data.spawn_locations.get(i)
             
             floor = Floor(
                 floor_number=i,
