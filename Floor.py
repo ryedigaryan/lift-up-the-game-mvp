@@ -4,7 +4,7 @@ from CustomerSpawnLocation import CustomerSpawnLocation
 
 
 class Floor:
-    def __init__(self, floor_number, y_position, width, height, total_floors, lift_center_x):
+    def __init__(self, floor_number, y_position, width, height, total_floors, lift_center_x, file_factory=None):
         """
         Initialize a floor
 
@@ -15,12 +15,14 @@ class Floor:
             height: Height of the floor
             total_floors: Total number of floors in the game
             lift_center_x: X coordinate of the center between lifts
+            file_factory: Optional FileCustomerFactory instance for file-based spawning
         """
         self.floor_number = floor_number
         self.y = y_position
         self.width = width
         self.height = height
         self.total_floors = total_floors
+        self.file_factory = file_factory
 
         # Create single spawn location randomly positioned far from lifts
         self.spawn_locations = []
@@ -68,7 +70,8 @@ class Floor:
             self.total_floors,
             self.width,
             spawn_interval=1.0 + 10.0*(self.floor_number+1),
-            start_time=(self.floor_number+1) * 2.0 + (self.floor_number+1)
+            start_time=(self.floor_number+1) * 2.0 + (self.floor_number+1),
+            file_factory=self.file_factory
         )
         self.spawn_locations.append(spawn_loc)
 

@@ -2,6 +2,7 @@ import pygame as pg
 from Floor import Floor
 from Lift import Lift
 from StatusBar import StatusBar
+from FileCustomerFactory import FileCustomerFactory
 
 
 class LiftUpGame:
@@ -32,6 +33,9 @@ class LiftUpGame:
         self.lifts = []
         self.active_popup_customer = None  # Track which customer's popup is active
         self.status_bar = StatusBar(self.SCREEN_WIDTH, self.STATUS_BAR_HEIGHT, 0, self.GAME_HEIGHT + self.TOP_PADDING)
+        
+        # Load level data
+        self.file_factory = FileCustomerFactory("data/level_1/customer_spawns.csv")
 
         self._initialize_game()
 
@@ -50,7 +54,8 @@ class LiftUpGame:
                 width=self.SCREEN_WIDTH,
                 height=self.FLOOR_HEIGHT,
                 total_floors=self.NUM_FLOORS,
-                lift_center_x=center_x
+                lift_center_x=center_x,
+                file_factory=self.file_factory
             )
             self.floors.append(floor)
 
