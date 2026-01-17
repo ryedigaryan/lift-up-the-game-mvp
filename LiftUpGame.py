@@ -5,11 +5,10 @@ from GameHistoryPersistence import GameHistoryPersistence
 from post_level.GameHistoryUpdaterAction import GameHistoryUpdaterAction
 from post_level.CompositePostLevelCompleteAction import CompositePostLevelCompleteAction
 from post_level.LoadLevelAction import LoadLevelAction
-from post_level.NoopAction import NoopAction
+from post_level.LevelSelectionAction import LevelSelectionAction
 from post_level.LevelTransitionAction import LevelTransitionAction
 from post_level.GameHistoryShowAction import GameHistoryShowAction
 from post_level.ExitAction import ExitAction
-from post_level.UnloadLevelAction import UnloadLevelAction
 
 
 class LiftUpGame:
@@ -44,17 +43,18 @@ class LiftUpGame:
         # Create post-level actions
         next_level_num = level_num + 1
         
+        level_select_action = LevelSelectionAction(levels_loader, lambda num: LoadLevelAction(self, levels_loader, num))
+        
         post_level_actions = CompositePostLevelCompleteAction([
             GameHistoryUpdaterAction(level_num, self.game_history_persistence),
-            UnloadLevelAction(self),
             LevelTransitionAction(
                 game=self,
                 level_num=level_num,
                 persistence=self.game_history_persistence,
                 next_level_action=LoadLevelAction(self, levels_loader, next_level_num) if levels_loader.level_exists(next_level_num) else None,
                 replay_action=LoadLevelAction(self, levels_loader, level_num),
-                level_select_action=NoopAction(),
-                game_history_show_action=GameHistoryShowAction(self, self.game_history_persistence, NoopAction(), ExitAction(self)),
+                level_select_action=level_select_action,
+                game_history_show_action=GameHistoryShowAction(self, self.game_history_persistence, level_select_action, ExitAction(self)),
                 exit_action=ExitAction(self)
             )
         ])
