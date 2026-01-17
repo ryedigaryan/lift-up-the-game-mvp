@@ -3,11 +3,12 @@ from RandomCustomerFactory import RandomCustomerFactory
 
 
 class CustomerSpawnLocation:
-    def __init__(self, floor_number, spawn_x, total_floors, floor_width, spawn_interval=60.0, start_time=None):
+    def __init__(self, spawn_id, floor_number, spawn_x, total_floors, floor_width, spawn_interval=60.0, start_time=None):
         """
         Initialize customer spawn location
 
         Args:
+            spawn_id: Unique identifier for this spawn location (e.g., "3-1")
             floor_number: The floor this spawn location is on
             spawn_x: X coordinate where customers spawn
             total_floors: Total number of floors in the game
@@ -15,6 +16,7 @@ class CustomerSpawnLocation:
             spawn_interval: Time in seconds between spawns (default 60)
             start_time: Time in seconds when first spawn occurs (default: floor_number * 60)
         """
+        self.id = spawn_id
         self.floor_number = floor_number
         self.spawn_x = spawn_x
         self.total_floors = total_floors

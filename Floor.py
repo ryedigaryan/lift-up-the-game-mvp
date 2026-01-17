@@ -56,8 +56,13 @@ class Floor:
             # Fallback if no valid positions
             spawn_x = margin
 
+        # Generate ID based on floor and order (currently only 1 spawn location)
+        # In the future, if we have multiple, we would sort them by x and assign IDs
+        spawn_id = f"{self.floor_number}-1"
+
         # Create spawn location
         spawn_loc = CustomerSpawnLocation(
+            spawn_id,
             self.floor_number,
             spawn_x,
             self.total_floors,
@@ -141,6 +146,11 @@ class Floor:
                 square_x = spawn_loc.spawn_x - square_size // 2
                 square_y = self.y + self.height - square_size - 10
                 screen.blit(square_surface, (square_x, square_y))
+                
+                # Draw ID
+                id_font = pg.font.Font(None, 20)
+                id_text = id_font.render(spawn_loc.id, True, (255, 255, 255))
+                screen.blit(id_text, (square_x, square_y - 15))
 
             # Draw all customers on this floor (without popups)
             for customer in self.get_all_customers():
