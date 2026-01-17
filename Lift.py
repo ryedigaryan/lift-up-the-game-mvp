@@ -41,9 +41,9 @@ class Lift:
             self.waiting_customers[customer.current_floor] = []
         if customer.current_floor not in self.request_queue:
             self.request_queue.append(customer.current_floor)
-        
+
         self.waiting_customers[customer.current_floor].append(customer)
-        
+
         if self.state == "idle":
             self._update_target_sequence()
         else:
@@ -133,11 +133,11 @@ class Lift:
         sim_deliveries = set(c.target_floor for c in self.customers_inside)
         sim_waiting = {f: [c.target_floor for c in v] for f, v in self.waiting_customers.items()}
         sim_requests = list(self.request_queue)
-        
+
         sequence = []
         while sim_deliveries or sim_requests:
             next_stop = self._find_best_stop(sim_floor, sim_direction, sim_deliveries, sim_waiting, sim_requests)
-            
+
             if next_stop is None: break
             sequence.append(next_stop)
 
@@ -146,13 +146,13 @@ class Lift:
             sim_floor = next_stop
 
             sim_deliveries.discard(sim_floor)
-            
+
             if sim_floor in sim_waiting:
                 pickup_targets = [t for t in sim_waiting[sim_floor] if (sim_direction == "up" and t > sim_floor) or (sim_direction == "down" and t < sim_floor)]
                 if not sim_deliveries: pickup_targets = sim_waiting[sim_floor]
                 sim_deliveries.update(pickup_targets)
                 sim_waiting.pop(sim_floor, None)
-            
+
             if sim_floor in sim_requests:
                 sim_requests.remove(sim_floor)
 
@@ -174,7 +174,7 @@ class Lift:
 
     def _arrive_at_floor(self):
         self.current_floor = self._y_to_floor()
-        
+
         self.door_open = True
         self.state = "waiting"
         self.door_timer = 0
@@ -217,7 +217,7 @@ class Lift:
                 del self.waiting_customers[self.current_floor]
                 if self.current_floor in self.request_queue:
                     self.request_queue.remove(self.current_floor)
-        
+
         self._update_target_sequence()
 
     def _has_customers_still_walking_to_current_floor(self):
