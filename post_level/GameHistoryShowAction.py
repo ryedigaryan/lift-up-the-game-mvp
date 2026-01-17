@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pygame as pg
 import time
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict
 from post_level.PostLevelCompleteAction import PostLevelCompleteAction
 from GameHistoryPersistence import GameHistoryPersistence
 from RawGameHistoryEntry import RawGameHistoryEntry
@@ -11,12 +11,12 @@ if TYPE_CHECKING:
 
 
 class GameHistoryShowAction(PostLevelCompleteAction):
-    def __init__(self):
-        self.persistence = GameHistoryPersistence("data/output")
+    def __init__(self, persistence: GameHistoryPersistence):
+        self.persistence = persistence
 
     def execute(self, level: Level):
         """
-        Takes over the screen to display a summary of the player's performance for each level.
+        Takes over the screen to display a summary of the player's best performance for each level.
         """
         screen = pg.display.get_surface()
         clock = pg.time.Clock()

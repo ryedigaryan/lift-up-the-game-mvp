@@ -1,12 +1,13 @@
 import pygame as pg
 from Level import Level
 from LevelsLoader import LevelsLoader
+from GameHistoryPersistence import GameHistoryPersistence
 from post_level.GameHistoryUpdaterAction import GameHistoryUpdaterAction
 from post_level.CompositePostLevelCompleteAction import CompositePostLevelCompleteAction
 from post_level.LoadLevelAction import LoadLevelAction
-from post_level.IfElseAction import IfElseAction
-from post_level.GameHistoryShowAction import GameHistoryShowAction
+from post_level.NoopAction import NoopAction
 from post_level.LevelTransitionAction import LevelTransitionAction
+from post_level.GameHistoryShowAction import GameHistoryShowAction
 
 
 class LiftUpGame:
@@ -28,6 +29,7 @@ class LiftUpGame:
         self.clock = pg.time.Clock()
         self.fps = 60
         
+        self.game_history_persistence = GameHistoryPersistence("data/output")
         self.current_level = None
         self.load_and_set_level(LevelsLoader("data/levels"), 1)
 
@@ -44,16 +46,15 @@ class LiftUpGame:
         next_level_num = level_num + 1
         
         post_level_actions = CompositePostLevelCompleteAction([
-            GameHistoryUpdaterAction(level_num),
-            IfElseAction(
-                condition=lambda: levels_loader.level_exists(next_level_num),
-                then_action=LevelTransitionAction(
-                    game=self,
-                    level_num=level_num,
-                    next_level_action=LoadLevelAction(self, levels_loader, next_level_num),
-                    replay_action=LoadLevelAction(self, levels_loader, level_num)
-                ),
-                else_action=GameHistoryShowAction()
+            GameHistoryUpdaterAction(level_num, self.game_history_persistence),
+            LevelTransitionAction(
+                game=self,
+                level_num=level_num,
+                persistence=self.game_history_persistence,
+                next_level_action=LoadLevelAction(self, levels_loader, next_level_num) if levels_loader.level_exists(next_level_num) else None,
+                replay_action=LoadLevelAction(self, levels_loader, level_num),
+                level_select_action=NoopAction(),
+                game_history_show_action=GameHistoryShowAction(self.game_history_persistence)
             )
         ])
         

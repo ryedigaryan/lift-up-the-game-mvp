@@ -10,9 +10,9 @@ if TYPE_CHECKING:
 
 
 class GameHistoryUpdaterAction(PostLevelCompleteAction):
-    def __init__(self, level_num: int):
+    def __init__(self, level_num: int, persistence: GameHistoryPersistence):
         self.level_num = level_num
-        self.persistence = GameHistoryPersistence("data/output")
+        self.persistence = persistence
 
     def execute(self, level: Level):
         """
