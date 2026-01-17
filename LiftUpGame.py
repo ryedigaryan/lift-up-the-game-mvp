@@ -6,6 +6,7 @@ from post_level.CompositePostLevelCompleteAction import CompositePostLevelComple
 from post_level.LoadNextLevelAction import LoadNextLevelAction
 from post_level.IfElseAction import IfElseAction
 from post_level.GameHistoryShowAction import GameHistoryShowAction
+from post_level.LevelTransitionAction import LevelTransitionAction
 
 
 class LiftUpGame:
@@ -45,7 +46,7 @@ class LiftUpGame:
             GameHistoryUpdaterAction(level_num),
             IfElseAction(
                 condition=lambda: self.levels_loader.level_exists(level_num + 1),
-                then_action=LoadNextLevelAction(self, self.levels_loader, level_num),
+                then_action=LevelTransitionAction(self, level_num, LoadNextLevelAction(self, self.levels_loader, level_num)),
                 else_action=GameHistoryShowAction()
             )
         ])
