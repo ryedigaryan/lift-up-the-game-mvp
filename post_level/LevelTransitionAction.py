@@ -39,14 +39,19 @@ class LevelTransitionAction(PostLevelCompleteAction):
         WHITE = (255, 255, 255)
         GREY = (150, 150, 150)
         GREEN = (100, 200, 100)
+        BLUE = (100, 100, 200)
         RED = (200, 100, 100)
         GOLD = (255, 215, 0)
         BACKGROUND = (30, 30, 30)
 
         # --- Button Rects ---
-        button_width, button_height = 250, 60
-        next_level_button_rect = pg.Rect(screen.get_width() / 2 - button_width - 20, screen.get_height() - 100, button_width, button_height)
-        exit_button_rect = pg.Rect(screen.get_width() / 2 + 20, screen.get_height() - 100, button_width, button_height)
+        button_width, button_height = 200, 60
+        total_width = button_width * 3 + 40
+        start_x = (screen.get_width() - total_width) / 2
+        
+        next_level_button_rect = pg.Rect(start_x, screen.get_height() - 100, button_width, button_height)
+        replay_button_rect = pg.Rect(start_x + button_width + 20, screen.get_height() - 100, button_width, button_height)
+        exit_button_rect = pg.Rect(start_x + (button_width + 20) * 2, screen.get_height() - 100, button_width, button_height)
 
         running = True
         while running:
@@ -58,6 +63,9 @@ class LevelTransitionAction(PostLevelCompleteAction):
                 if event.type == pg.MOUSEBUTTONDOWN:
                     if next_level_button_rect.collidepoint(mouse_pos):
                         self.next_level_action.execute(level)
+                        running = False
+                    elif replay_button_rect.collidepoint(mouse_pos):
+                        self.game.load_and_set_level(self.level_num)
                         running = False
                     elif exit_button_rect.collidepoint(mouse_pos):
                         self.game.current_level = None # Signal game to exit
@@ -99,6 +107,10 @@ class LevelTransitionAction(PostLevelCompleteAction):
             pg.draw.rect(screen, GREEN, next_level_button_rect, border_radius=10)
             next_text = button_font.render("Next Level", True, BACKGROUND)
             screen.blit(next_text, next_text.get_rect(center=next_level_button_rect.center))
+
+            pg.draw.rect(screen, BLUE, replay_button_rect, border_radius=10)
+            replay_text = button_font.render("Replay", True, BACKGROUND)
+            screen.blit(replay_text, replay_text.get_rect(center=replay_button_rect.center))
 
             pg.draw.rect(screen, RED, exit_button_rect, border_radius=10)
             exit_text = button_font.render("Exit", True, BACKGROUND)
