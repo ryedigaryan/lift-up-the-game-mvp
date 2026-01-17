@@ -33,24 +33,21 @@ class CustomerSpawnLocation:
         self.start_time = start_time if start_time is not None else floor_number * 60.0
         self.random_factory = RandomCustomerFactory(high_priority_prob=0.5)
         
-        self.time_since_start = 0.0
         self.spawned_customers: List[Customer] = []
         self.total_spawned_count = 0
 
-    def update(self, dt: float):
+    def update(self, level_time: float):
         """
         Update spawn timer and spawn customers if needed
 
         Args:
-            dt: Delta time in seconds since last update
+            level_time: The time in seconds since the level started.
         """
-        self.time_since_start += dt
-
         if self.file_factory:
             # File-based spawning
             customer = self.file_factory.get_customer(
                 self.id, 
-                self.time_since_start, 
+                level_time, 
                 self.floor_number, 
                 self.spawn_x, 
                 self.total_floors, 
@@ -61,8 +58,8 @@ class CustomerSpawnLocation:
                 self.total_spawned_count += 1
         else:
             # Random spawning (legacy behavior)
-            if self.time_since_start >= self.start_time:
-                time_since_first_spawn = self.time_since_start - self.start_time
+            if level_time >= self.start_time:
+                time_since_first_spawn = level_time - self.start_time
                 expected_total_spawns = int(time_since_first_spawn / self.spawn_interval) + 1
 
                 while self.total_spawned_count < expected_total_spawns:
@@ -70,7 +67,8 @@ class CustomerSpawnLocation:
                         spawn_floor=self.floor_number,
                         spawn_x=self.spawn_x,
                         total_floors=self.total_floors,
-                        floor_width=self.floor_width
+                        floor_width=self.floor_width,
+                        request_time=level_time
                     )
                     self.spawned_customers.append(customer)
                     self.total_spawned_count += 1

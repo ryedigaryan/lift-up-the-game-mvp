@@ -55,7 +55,8 @@ class DeterministicCustomerFactory:
                 target_floor=target_floor,
                 color=color,
                 popup_offset_y=popup_offset_y,
-                is_high_priority=is_high_priority
+                is_high_priority=is_high_priority,
+                request_time=current_time
             )
             
         return None

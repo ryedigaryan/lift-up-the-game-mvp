@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 
 class FloorRequestPopup:
-    def __init__(self, customer: Customer, offset_y: int = 0):
+    def __init__(self, customer: 'Customer', offset_y: int = 0):
         self.customer = customer
         self.popup_width = 180  # Increased width for new layout
         self.popup_height = 100
@@ -32,7 +32,7 @@ class FloorRequestPopup:
         mx, my = mouse_pos
         return popup_x <= mx <= popup_x + popup_width and popup_y <= my <= popup_y + popup_height
 
-    def handle_click(self, mouse_pos: Tuple[int, int]) -> bool:
+    def handle_click(self, mouse_pos: Tuple[int, int], current_time: float) -> bool:
         """Handle mouse click on popup buttons"""
         if not self.customer.show_popup or self.customer.state != "waiting_for_lift_selection":
             return False
@@ -48,12 +48,12 @@ class FloorRequestPopup:
 
         # Check Lift A button
         if button_a_x <= mx <= button_a_x + self.button_width and button_y <= my <= button_y + self.button_height:
-            self.customer.select_lift("A")
+            self.customer.select_lift("A", current_time)
             return True
 
         # Check Lift B button
         if button_b_x <= mx <= button_b_x + self.button_width and button_y <= my <= button_y + self.button_height:
-            self.customer.select_lift("B")
+            self.customer.select_lift("B", current_time)
             return True
 
         return False

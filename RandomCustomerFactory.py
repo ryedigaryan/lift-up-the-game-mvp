@@ -9,7 +9,7 @@ class RandomCustomerFactory:
         if seed:
             random.seed(seed)
 
-    def generate(self, spawn_floor: int, spawn_x: int, total_floors: int, floor_width: int) -> Customer:
+    def generate(self, spawn_floor: int, spawn_x: int, total_floors: int, floor_width: int, request_time: float) -> Customer:
         # Randomize properties
         target_floor = self._request_random_floor(spawn_floor, total_floors)
         color = (random.randint(50, 200), random.randint(50, 200), random.randint(50, 200))
@@ -24,7 +24,8 @@ class RandomCustomerFactory:
             target_floor=target_floor,
             color=color,
             popup_offset_y=popup_offset_y,
-            is_high_priority=is_high_priority
+            is_high_priority=is_high_priority,
+            request_time=request_time
         )
 
     def _request_random_floor(self, current_floor: int, total_floors: int) -> int:

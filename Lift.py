@@ -52,22 +52,22 @@ class Lift:
         else:
             self._update_target_sequence()
 
-    def update(self, dt: float):
+    def update(self, dt: float, level_time: float):
         if self.state == "idle":
             if self.target_sequence:
-                self._start_moving()
+                self._start_moving(level_time)
         elif self.state == "waiting":
             self.door_timer += dt
             if self.door_timer >= self.door_wait_time:
-                self._close_door_and_continue()
+                self._close_door_and_continue(level_time)
         elif self.state in ["moving_up", "moving_down"]:
-            self._move_towards_target()
+            self._move_towards_target(level_time)
 
     def _set_idle(self):
         self.state = "idle"
         self.target_sequence = []
 
-    def _start_moving(self):
+    def _start_moving(self, level_time: float):
         if not self.target_sequence:
             self._set_idle()
             return
@@ -80,7 +80,7 @@ class Lift:
         target_y = self._floor_to_y(next_floor)
 
         if abs(self.y - target_y) < 5:
-            self._arrive_at_floor()
+            self._arrive_at_floor(level_time)
         else:
             if self.y > target_y:
                 self.state = "moving_up"
@@ -161,7 +161,7 @@ class Lift:
 
         self.target_sequence = sequence
 
-    def _move_towards_target(self):
+    def _move_towards_target(self, level_time: float):
         next_floor = self._get_next_floor()
         if next_floor is None:
             self._set_idle()
@@ -170,12 +170,12 @@ class Lift:
         target_y = self._floor_to_y(next_floor)
         if abs(self.y - target_y) < self.speed:
             self.y = target_y
-            self._arrive_at_floor()
+            self._arrive_at_floor(level_time)
         else:
             if self.y > target_y: self.y -= self.speed
             else: self.y += self.speed
 
-    def _arrive_at_floor(self):
+    def _arrive_at_floor(self, level_time: float):
         self.current_floor = self._y_to_floor()
 
         self.door_open = True
@@ -189,7 +189,7 @@ class Lift:
                 target_spawn_x = self.x + self.width // 2
                 if self.floors and self.current_floor < len(self.floors):
                     target_spawn_x = self.floors[self.current_floor].get_spawn_location_x()
-                customer.exit_lift(self.current_floor, self.x + self.width // 2, target_spawn_x)
+                customer.exit_lift(self.current_floor, self.x + self.width // 2, target_spawn_x, level_time)
                 if self.floors and self.current_floor < len(self.floors):
                     self.floors[self.current_floor].add_customer(customer)
                 customers_to_remove.append(customer)
@@ -228,14 +228,14 @@ class Lift:
             return any(c.state == "walking_to_lift" for c in self.waiting_customers[self.current_floor])
         return False
 
-    def _close_door_and_continue(self):
+    def _close_door_and_continue(self, level_time: float):
         if self._has_customers_still_walking_to_current_floor():
             self.door_timer = 0
             return
 
         self.door_open = False
         if self.target_sequence:
-            self._start_moving()
+            self._start_moving(level_time)
         else:
             self._set_idle()
 

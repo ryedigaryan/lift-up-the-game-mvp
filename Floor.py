@@ -99,17 +99,15 @@ class Floor:
         )
         self.spawn_locations.append(spawn_loc)
 
-    def update(self, dt: float, lift_positions: Dict[str, int]):
+    def update(self, dt: float, level_time: float, lift_positions: Dict[str, int]):
         """Update floor and all spawn locations"""
         # Update spawn locations
         for spawn_loc in self.spawn_locations:
-            spawn_loc.update(dt)
+            spawn_loc.update(level_time)
 
         # Update all customers
-        customer_y = self.y + self.height - 50
         for customer in self.get_all_customers():
-            customer.set_y(customer_y)
-            customer.update(dt, lift_positions)
+            customer.update(lift_positions)
 
     def get_all_customers(self) -> List[Customer]:
         """Get all customers on this floor"""
@@ -125,10 +123,10 @@ class Floor:
             return self.spawn_locations[0].spawn_x
         return self.width // 2
 
-    def handle_click(self, mouse_pos: Tuple[int, int]) -> Optional[Customer]:
+    def handle_click(self, mouse_pos: Tuple[int, int], current_time: float) -> Optional[Customer]:
         """Handle mouse clicks for customer popups"""
         for customer in self.get_all_customers():
-            if customer.handle_click(mouse_pos):
+            if customer.handle_click(mouse_pos, current_time):
                 return customer
         return None
         
@@ -180,6 +178,7 @@ class Floor:
             # Draw all customers on this floor (without popups)
             for customer in self.get_all_customers():
                 if customer.state != "in_lift":
+                    customer.set_y(self.y + self.height - 50)
                     customer.draw(screen, draw_popup=False)
         else:
             # Only draw popups

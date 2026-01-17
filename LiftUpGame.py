@@ -82,7 +82,8 @@ class LiftUpGame:
 
             if event.type == pg.MOUSEBUTTONDOWN:
                 mouse_pos = pg.mouse.get_pos()
-                self.current_level.handle_click(mouse_pos)
+                if self.current_level:
+                    self.current_level.handle_click(mouse_pos)
 
         return True
 
@@ -97,11 +98,11 @@ class LiftUpGame:
         
         if self.current_level:
             self.current_level.draw(self.screen)
-
-        game_time = pg.time.get_ticks() / 1000.0
-        font = pg.font.Font(None, 24)
-        time_text = font.render(f"Time: {game_time:.1f}s", True, (255, 255, 255))
-        self.screen.blit(time_text, (self.SCREEN_WIDTH - 120, 10))
+            
+            # Draw level time
+            font = pg.font.Font(None, 24)
+            time_text = font.render(f"Time: {self.current_level.level_time:.1f}s", True, (255, 255, 255))
+            self.screen.blit(time_text, (self.SCREEN_WIDTH - 120, 10))
 
         pg.display.flip()
 

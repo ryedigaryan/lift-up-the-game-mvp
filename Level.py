@@ -42,6 +42,7 @@ class Level:
         self.customer_factory = DeterministicCustomerFactory(raw_data.customer_spawns)
         
         self.is_complete = False
+        self.level_time = 0.0
         self._initialize_level()
 
     def _initialize_level(self):
@@ -77,7 +78,7 @@ class Level:
             
         # Only handle click for the active popup customer if one exists
         if self.active_popup_customer:
-            if self.active_popup_customer.handle_click(mouse_pos):
+            if self.active_popup_customer.handle_click(mouse_pos, self.level_time):
                 # If click was handled (lift selected), add request
                 if self.active_popup_customer.selected_lift:
                     for lift in self.lifts:
@@ -94,17 +95,19 @@ class Level:
         """Update level state."""
         if self.is_complete:
             return
+            
+        self.level_time += dt
 
         # Get lift positions for customer pathfinding
         lift_positions = {lift.name: lift.x + lift.width // 2 for lift in self.lifts}
 
         # Update floors and customers
         for floor in self.floors:
-            floor.update(dt, lift_positions)
+            floor.update(dt, self.level_time, lift_positions)
 
         # Update lifts
         for lift in self.lifts:
-            lift.update(dt)
+            lift.update(dt, self.level_time)
 
         # Clean up delivered customers periodically and calculate penalties
         for floor in self.floors:
@@ -146,14 +149,14 @@ class Level:
         for spawn_loc in floor.spawn_locations:
             for customer in spawn_loc.spawned_customers:
                 if customer.state == "delivered" and customer.delivery_time is not None:
-                    penalty = customer.calculate_penalty(customer.delivery_time)
+                    penalty = customer.calculate_penalty(self.level_time)
                     self.status_bar.add_penalty(penalty)
             spawn_loc.remove_delivered_customers()
             
         # Check arrived customers
         for customer in floor.arrived_customers:
             if customer.state == "delivered" and customer.delivery_time is not None:
-                penalty = customer.calculate_penalty(customer.delivery_time)
+                penalty = customer.calculate_penalty(self.level_time)
                 self.status_bar.add_penalty(penalty)
         
         floor.arrived_customers = [c for c in floor.arrived_customers if c.state != "delivered"]
