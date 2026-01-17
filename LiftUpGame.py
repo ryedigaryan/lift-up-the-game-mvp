@@ -29,7 +29,7 @@ class LiftUpGame:
         self.game_history_persistence = GameHistoryPersistence("data/output")
         self.current_level = None
         self.has_exited = False
-        self.load_and_set_level(LevelsLoader("data/levels"), 1)
+        # self.load_and_set_level(LevelsLoader("data/levels"), 1)
 
     def load_and_set_level(self, levels_loader: LevelsLoader, level_num: int):
         """
@@ -86,6 +86,9 @@ class LiftUpGame:
         """Update game state"""
         if self.current_level:
             self.current_level.update()
+        else:
+            loader = LevelsLoader("data/levels")
+            LevelSelectionAction(loader, lambda num: LoadLevelAction(self, loader, num)).execute(None)
 
     def draw(self):
         """Draw everything"""

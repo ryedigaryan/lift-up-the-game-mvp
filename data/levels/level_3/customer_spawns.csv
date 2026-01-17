@@ -1,0 +1,10 @@
+Timestamp,SpawnLocation,Priority,TargetFloor
+2.0,0-1,HIGH,4
+4.0,4-1,LOW,1
+6.0,2-1,HIGH,0
+8.0,1-1,HIGH,4
+10.0,3-1,LOW,0
+12.0,0-1,LOW,2
+14.0,4-1,HIGH,0
+16.0,1-1,LOW,3
+18.0,2-1,HIGH,4
