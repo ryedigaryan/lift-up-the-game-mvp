@@ -4,7 +4,7 @@ from CustomerSpawnLocation import CustomerSpawnLocation
 
 
 class Floor:
-    def __init__(self, floor_number, y_position, width, height, total_floors, lift_center_x, file_factory=None):
+    def __init__(self, floor_number, y_position, width, height, total_floors, lift_center_x, file_factory=None, spawn_locations_data=None):
         """
         Initialize a floor
 
@@ -16,6 +16,7 @@ class Floor:
             total_floors: Total number of floors in the game
             lift_center_x: X coordinate of the center between lifts
             file_factory: Optional FileCustomerFactory instance for file-based spawning
+            spawn_locations_data: Optional list of spawn location data for this floor
         """
         self.floor_number = floor_number
         self.y = y_position
@@ -23,16 +24,37 @@ class Floor:
         self.height = height
         self.total_floors = total_floors
         self.file_factory = file_factory
-
-        # Create single spawn location randomly positioned far from lifts
         self.spawn_locations = []
-        self._create_spawn_location(lift_center_x)
+        
+        if spawn_locations_data:
+            self._create_spawn_locations_from_data(spawn_locations_data)
+        else:
+            self._create_random_spawn_location(lift_center_x)
         
         # Customers that arrived from other floors
         self.arrived_customers = []
 
-    def _create_spawn_location(self, lift_center_x):
-        """Create a single random spawn location far from lifts"""
+    def _create_spawn_locations_from_data(self, data):
+        """Create spawn locations from a list of data dicts"""
+        # Sort by X to assign IDs correctly
+        sorted_data = sorted(data, key=lambda d: d['X'])
+        
+        for i, loc_data in enumerate(sorted_data):
+            spawn_id = f"{self.floor_number}-{i+1}"
+            spawn_x = loc_data['X']
+            
+            spawn_loc = CustomerSpawnLocation(
+                spawn_id,
+                self.floor_number,
+                spawn_x,
+                self.total_floors,
+                self.width,
+                file_factory=self.file_factory
+            )
+            self.spawn_locations.append(spawn_loc)
+
+    def _create_random_spawn_location(self, lift_center_x):
+        """Create a single random spawn location far from lifts (legacy)"""
         # Define exclusion zone around lifts (200 pixels wide)
         lift_zone_left = lift_center_x - 100
         lift_zone_right = lift_center_x + 100
@@ -58,8 +80,6 @@ class Floor:
             # Fallback if no valid positions
             spawn_x = margin
 
-        # Generate ID based on floor and order (currently only 1 spawn location)
-        # In the future, if we have multiple, we would sort them by x and assign IDs
         spawn_id = f"{self.floor_number}-1"
 
         # Create spawn location
