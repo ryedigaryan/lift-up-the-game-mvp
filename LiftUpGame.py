@@ -3,7 +3,7 @@ from Level import Level
 from LevelsLoader import LevelsLoader
 from post_level.GameHistoryUpdaterAction import GameHistoryUpdaterAction
 from post_level.CompositePostLevelCompleteAction import CompositePostLevelCompleteAction
-from post_level.LoadNextLevelAction import LoadNextLevelAction
+from post_level.LoadLevelAction import LoadLevelAction
 from post_level.IfElseAction import IfElseAction
 from post_level.GameHistoryShowAction import GameHistoryShowAction
 from post_level.LevelTransitionAction import LevelTransitionAction
@@ -28,15 +28,14 @@ class LiftUpGame:
         self.clock = pg.time.Clock()
         self.fps = 60
         
-        self.levels_loader = LevelsLoader("data/levels")
         self.current_level = None
-        self.load_and_set_level(1)
+        self.load_and_set_level(LevelsLoader("data/levels"), 1)
 
-    def load_and_set_level(self, level_num: int):
+    def load_and_set_level(self, levels_loader: LevelsLoader, level_num: int):
         """
         Loads all data for a given level number and sets it as the current level.
         """
-        if not self.levels_loader.level_exists(level_num):
+        if not levels_loader.level_exists(level_num):
             print(f"Attempted to load level '{level_num}', but it does not exist or is incomplete. Game will end.")
             self.current_level = None
             return
@@ -45,15 +44,20 @@ class LiftUpGame:
         post_level_actions = CompositePostLevelCompleteAction([
             GameHistoryUpdaterAction(level_num),
             IfElseAction(
-                condition=lambda: self.levels_loader.level_exists(level_num + 1),
-                then_action=LevelTransitionAction(self, level_num, LoadNextLevelAction(self, self.levels_loader, level_num)),
+                condition=lambda: levels_loader.level_exists(level_num + 1),
+                then_action=LevelTransitionAction(
+                    self, 
+                    levels_loader, 
+                    level_num, 
+                    LoadLevelAction(self, levels_loader, level_num + 1)
+                ),
                 else_action=GameHistoryShowAction()
             )
         ])
         
         # Initialize Level
         self.current_level = Level(
-            raw_data=self.levels_loader.load(level_num),
+            raw_data=levels_loader.load(level_num),
             screen_width=self.SCREEN_WIDTH,
             game_height=self.GAME_HEIGHT,
             top_padding=self.TOP_PADDING,
