@@ -24,10 +24,6 @@ class LiftUpGame:
         # Screen setup
         self.screen = pg.display.set_mode((self.SCREEN_WIDTH, self.SCREEN_HEIGHT))
         pg.display.set_caption("Lift Up Game")
-
-        # Clock
-        self.clock = pg.time.Clock()
-        self.fps = 60
         
         self.game_history_persistence = GameHistoryPersistence("data/output")
         self.current_level = None
@@ -87,10 +83,10 @@ class LiftUpGame:
 
         return True
 
-    def update(self, dt: float):
+    def update(self):
         """Update game state"""
         if self.current_level:
-            self.current_level.update(dt)
+            self.current_level.update()
 
     def draw(self):
         """Draw everything"""
@@ -114,7 +110,6 @@ class LiftUpGame:
             if not self.current_level:
                 running = False # End game if no more levels
 
-            dt = self.clock.tick(self.fps) / 1000.0
-            self.update(dt)
+            self.update()
             self.draw()
         pg.quit()

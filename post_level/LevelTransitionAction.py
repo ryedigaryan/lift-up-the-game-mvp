@@ -22,7 +22,6 @@ class LevelTransitionAction(PostLevelCompleteAction):
 
     def execute(self, level: Level):
         screen = pg.display.get_surface()
-        clock = pg.time.Clock()
         final_penalty = level.status_bar.total_penalty
 
         level_name = f"level_{self.level_num}"
@@ -88,4 +87,3 @@ class LevelTransitionAction(PostLevelCompleteAction):
                 screen.blit(text_surf, text_surf.get_rect(center=rect.center))
 
             pg.display.flip()
-            clock.tick(60)

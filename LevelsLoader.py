@@ -58,6 +58,7 @@ class LevelsLoader:
         
         # Currently hardcoding num_floors to 5, but this could also be loaded from a config file
         return RawLevelData(
+            level_num=level_num,
             customer_spawns=customer_spawns,
             spawn_locations=spawn_locations,
             num_floors=5

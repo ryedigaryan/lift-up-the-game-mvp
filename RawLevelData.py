@@ -4,15 +4,17 @@ from RawSpawnLocationData import RawSpawnLocationData
 
 
 class RawLevelData:
-    def __init__(self, customer_spawns: List[RawCustomerData], spawn_locations: Dict[int, List[RawSpawnLocationData]], num_floors: int = 5):
+    def __init__(self, level_num: int, customer_spawns: List[RawCustomerData], spawn_locations: Dict[int, List[RawSpawnLocationData]], num_floors: int = 5):
         """
         Holds the raw data required to initialize a Level.
 
         Args:
+            level_num (int): The number of the level.
             customer_spawns (list[RawCustomerData]): List of customer spawn events.
             spawn_locations (dict[int, list[RawSpawnLocationData]]): Dictionary mapping floor numbers to lists of spawn location data.
             num_floors (int): Number of floors in the level.
         """
+        self.level_num = level_num
         self.customer_spawns = customer_spawns
         self.spawn_locations = spawn_locations
         self.num_floors = num_floors

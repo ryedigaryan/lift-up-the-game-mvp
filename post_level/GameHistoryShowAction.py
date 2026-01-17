@@ -19,7 +19,6 @@ class GameHistoryShowAction(PostLevelCompleteAction):
         Takes over the screen to display a summary of the player's best performance for each level.
         """
         screen = pg.display.get_surface()
-        clock = pg.time.Clock()
 
         # --- Data Processing ---
         all_history = self.persistence.read_all()
@@ -114,4 +113,3 @@ class GameHistoryShowAction(PostLevelCompleteAction):
             screen.blit(prompt_surf, prompt_rect)
 
             pg.display.flip()
-            clock.tick(60)

@@ -43,6 +43,8 @@ class Level:
         
         self.is_complete = False
         self.level_time = 0.0
+        self.clock = pg.time.Clock()
+        self.fps = 60
         self._initialize_level()
 
     def _initialize_level(self):
@@ -91,11 +93,12 @@ class Level:
                 return True
         return False
 
-    def update(self, dt: float):
+    def update(self):
         """Update level state."""
         if self.is_complete:
             return
             
+        dt = self.clock.tick(self.fps) / 1000.0
         self.level_time += dt
 
         # Get lift positions for customer pathfinding
