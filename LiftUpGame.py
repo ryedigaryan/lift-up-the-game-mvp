@@ -2,7 +2,9 @@ import pygame as pg
 from Level import Level
 from LevelsLoader import LevelsLoader
 from post_level.GameHistoryUpdaterAction import GameHistoryUpdaterAction
-from post_level.CompositePostLevelCompleteActionBuilder import CompositePostLevelCompleteActionBuilder
+from post_level.CompositePostLevelCompleteAction import CompositePostLevelCompleteAction
+from post_level.LoadNextLevelAction import LoadNextLevelAction
+from post_level.IfElseAction import IfElseAction
 
 
 class LiftUpGame:
@@ -24,21 +26,31 @@ class LiftUpGame:
         self.clock = pg.time.Clock()
         self.fps = 60
 
-        # Initialize LevelsLoader
         self.levels_loader = LevelsLoader("data/levels")
-        
-        # Load the first level
-        level_name = "level_1"
-        raw_level_data = self.levels_loader.load(level_name)
-        
+        self.current_level = None
+        self.load_and_set_level(1)
+
+    def load_and_set_level(self, level_num: int):
+        """
+        Loads all data for a given level number and sets it as the current level.
+        """
+        if not self.levels_loader.level_exists(level_num):
+            print(f"Attempted to load level '{level_num}', but it does not exist or is incomplete. Game will end.")
+            self.current_level = None
+            return
+
         # Create post-level actions
-        post_level_actions = (CompositePostLevelCompleteActionBuilder()
-                              .with_action(GameHistoryUpdaterAction(level_name))
-                              .build())
+        post_level_actions = CompositePostLevelCompleteAction([
+            GameHistoryUpdaterAction(level_num),
+            IfElseAction(
+                condition=lambda: self.levels_loader.level_exists(level_num + 1),
+                then_action=LoadNextLevelAction(self, self.levels_loader, level_num)
+            )
+        ])
         
         # Initialize Level
         self.current_level = Level(
-            raw_data=raw_level_data,
+            raw_data=self.levels_loader.load(level_num),
             screen_width=self.SCREEN_WIDTH,
             game_height=self.GAME_HEIGHT,
             top_padding=self.TOP_PADDING,
@@ -48,6 +60,12 @@ class LiftUpGame:
 
     def handle_events(self) -> bool:
         """Handle pygame events"""
+        if not self.current_level:
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return False
+            return True
+
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return False
@@ -60,13 +78,15 @@ class LiftUpGame:
 
     def update(self, dt: float):
         """Update game state"""
-        self.current_level.update(dt)
+        if self.current_level:
+            self.current_level.update(dt)
 
     def draw(self):
         """Draw everything"""
         self.screen.fill((30, 30, 30))
         
-        self.current_level.draw(self.screen)
+        if self.current_level:
+            self.current_level.draw(self.screen)
 
         game_time = pg.time.get_ticks() / 1000.0
         font = pg.font.Font(None, 24)
@@ -80,6 +100,9 @@ class LiftUpGame:
         running = True
         while running:
             running = self.handle_events()
+            if not self.current_level:
+                running = False # End game if no more levels
+
             dt = self.clock.tick(self.fps) / 1000.0
             self.update(dt)
             self.draw()

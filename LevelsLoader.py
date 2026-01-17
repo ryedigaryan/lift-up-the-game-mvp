@@ -16,16 +16,17 @@ class LevelsLoader:
         """
         self.levels_root_path = levels_root_path
 
-    def level_exists(self, level_name: str) -> bool:
+    def level_exists(self, level_num: int) -> bool:
         """
         Checks if a level directory and its required files exist.
 
         Args:
-            level_name (str): The name of the level folder (e.g., "level_1").
+            level_num (int): The number of the level.
 
         Returns:
             bool: True if the level exists and is valid, False otherwise.
         """
+        level_name = f"level_{level_num}"
         level_path = os.path.join(self.levels_root_path, level_name)
         customer_spawns_path = os.path.join(level_path, "customer_spawns.csv")
         spawn_locations_path = os.path.join(level_path, "spawn_locations.csv")
@@ -34,17 +35,18 @@ class LevelsLoader:
                 os.path.exists(customer_spawns_path) and
                 os.path.exists(spawn_locations_path))
 
-    def load(self, level_name: str) -> RawLevelData:
+    def load(self, level_num: int) -> RawLevelData:
         """
         Loads a level by name.
 
         Args:
-            level_name (str): The name of the level folder (e.g., "level_1").
+            level_num (int): The number of the level.
 
         Returns:
             RawLevelData: The loaded raw level data.
         """
-        if not self.level_exists(level_name):
+        level_name = f"level_{level_num}"
+        if not self.level_exists(level_num):
             raise FileNotFoundError(f"Level '{level_name}' not found or is incomplete.")
 
         level_path = os.path.join(self.levels_root_path, level_name)
