@@ -9,6 +9,7 @@ from post_level.NoopAction import NoopAction
 from post_level.LevelTransitionAction import LevelTransitionAction
 from post_level.GameHistoryShowAction import GameHistoryShowAction
 from post_level.ExitAction import ExitAction
+from post_level.UnloadLevelAction import UnloadLevelAction
 
 
 class LiftUpGame:
@@ -45,6 +46,7 @@ class LiftUpGame:
         
         post_level_actions = CompositePostLevelCompleteAction([
             GameHistoryUpdaterAction(level_num, self.game_history_persistence),
+            UnloadLevelAction(self),
             LevelTransitionAction(
                 game=self,
                 level_num=level_num,
