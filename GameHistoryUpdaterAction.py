@@ -1,0 +1,28 @@
+from __future__ import annotations
+import time
+from typing import TYPE_CHECKING
+from post_level.PostLevelCompleteAction import PostLevelCompleteAction
+from GameHistoryPersistence import GameHistoryPersistence
+from RawGameHistoryEntry import RawGameHistoryEntry
+
+if TYPE_CHECKING:
+    from Level import Level
+
+
+class GameHistoryUpdaterAction(PostLevelCompleteAction):
+    def __init__(self, level_name: str):
+        self.level_name = level_name
+        self.persistence = GameHistoryPersistence("data/output")
+
+    def execute(self, level: Level):
+        """
+        Saves the final score to the game history file.
+        """
+        final_penalty = level.status_bar.total_penalty
+        entry = RawGameHistoryEntry(
+            timestamp_epoch_seconds=int(time.time()),
+            level=self.level_name,
+            penalty=final_penalty
+        )
+        self.persistence.append(entry)
+        print(f"Level {self.level_name} complete! Final penalty: {final_penalty:.2f} saved to history.")

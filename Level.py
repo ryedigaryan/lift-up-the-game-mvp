@@ -6,10 +6,11 @@ from RawLevelData import RawLevelData
 from StatusBar import StatusBar
 from DeterministicCustomerFactory import DeterministicCustomerFactory
 from Customer import Customer
+from post_level.PostLevelCompleteAction import PostLevelCompleteAction
 
 
 class Level:
-    def __init__(self, raw_data: RawLevelData, screen_width: int, game_height: int, top_padding: int, status_bar_height: int):
+    def __init__(self, raw_data: RawLevelData, screen_width: int, game_height: int, top_padding: int, status_bar_height: int, post_level_action: Optional[PostLevelCompleteAction] = None):
         """
         Represents a single game level.
 
@@ -19,12 +20,14 @@ class Level:
             game_height (int): Height of the playable game area.
             top_padding (int): Padding at the top of the screen.
             status_bar_height (int): Height of the status bar.
+            post_level_action (PostLevelCompleteAction): Action to execute when the level is complete.
         """
         self.raw_data = raw_data
         self.screen_width = screen_width
         self.game_height = game_height
         self.top_padding = top_padding
         self.status_bar_height = status_bar_height
+        self.post_level_action = post_level_action
         
         self.num_floors = raw_data.num_floors
         self.floor_height = self.game_height // self.num_floors
@@ -36,8 +39,9 @@ class Level:
         self.status_bar = StatusBar(self.screen_width, self.status_bar_height, 0, self.game_height + self.top_padding)
         
         # Load factories
-        self.file_factory = DeterministicCustomerFactory(raw_data.customer_spawns)
+        self.customer_factory = DeterministicCustomerFactory(raw_data.customer_spawns)
         
+        self.is_complete = False
         self._initialize_level()
 
     def _initialize_level(self):
@@ -56,7 +60,7 @@ class Level:
                 height=self.floor_height,
                 total_floors=self.num_floors,
                 lift_center_x=center_x,
-                file_factory=self.file_factory,
+                file_factory=self.customer_factory,
                 spawn_locations_data=floor_spawn_data
             )
             self.floors.append(floor)
@@ -68,6 +72,9 @@ class Level:
 
     def handle_click(self, mouse_pos: Tuple[int, int]) -> bool:
         """Handle mouse clicks within the level."""
+        if self.is_complete:
+            return False
+            
         # Only handle click for the active popup customer if one exists
         if self.active_popup_customer:
             if self.active_popup_customer.handle_click(mouse_pos):
@@ -85,6 +92,9 @@ class Level:
 
     def update(self, dt: float):
         """Update level state."""
+        if self.is_complete:
+            return
+
         # Get lift positions for customer pathfinding
         lift_positions = {lift.name: lift.x + lift.width // 2 for lift in self.lifts}
 
@@ -102,6 +112,28 @@ class Level:
 
         # Update active popup based on mouse position
         self._update_active_popup()
+        
+        # Check for level completion
+        self._check_completion()
+
+    def _check_completion(self):
+        """Checks if the level is complete and executes the post-level action."""
+        if self.is_complete:
+            return
+
+        # 1. Check if there are more customers to spawn
+        if self.customer_factory.remaining_customers_to_spawn() > 0:
+            return
+
+        # 2. Check if all customers on screen have been delivered
+        for floor in self.floors:
+            if any(c.state != "delivered" for c in floor.get_all_customers()):
+                return
+        
+        # If we reach here, the level is complete
+        self.is_complete = True
+        if self.post_level_action:
+            self.post_level_action.execute(self)
 
     def _process_delivered_customers(self, floor: Floor):
         """Process delivered customers to calculate penalty and remove them."""

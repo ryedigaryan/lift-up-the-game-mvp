@@ -59,3 +59,9 @@ class DeterministicCustomerFactory:
             )
             
         return None
+
+    def remaining_customers_to_spawn(self) -> int:
+        """
+        Returns the total number of customers that have not yet been spawned.
+        """
+        return sum(len(queue) for queue in self.spawns.values())

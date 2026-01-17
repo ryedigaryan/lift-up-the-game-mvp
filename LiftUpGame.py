@@ -1,6 +1,8 @@
 import pygame as pg
 from Level import Level
 from LevelsLoader import LevelsLoader
+from post_level.GameHistoryUpdaterAction import GameHistoryUpdaterAction
+from post_level.CompositePostLevelCompleteActionBuilder import CompositePostLevelCompleteActionBuilder
 
 
 class LiftUpGame:
@@ -26,7 +28,13 @@ class LiftUpGame:
         self.levels_loader = LevelsLoader("data/levels")
         
         # Load the first level
-        raw_level_data = self.levels_loader.load("level_1")
+        level_name = "level_1"
+        raw_level_data = self.levels_loader.load(level_name)
+        
+        # Create post-level actions
+        post_level_actions = (CompositePostLevelCompleteActionBuilder()
+                              .with_action(GameHistoryUpdaterAction(level_name))
+                              .build())
         
         # Initialize Level
         self.current_level = Level(
@@ -34,7 +42,8 @@ class LiftUpGame:
             screen_width=self.SCREEN_WIDTH,
             game_height=self.GAME_HEIGHT,
             top_padding=self.TOP_PADDING,
-            status_bar_height=self.STATUS_BAR_HEIGHT
+            status_bar_height=self.STATUS_BAR_HEIGHT,
+            post_level_action=post_level_actions
         )
 
     def handle_events(self) -> bool:
