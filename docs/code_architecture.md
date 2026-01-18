@@ -1,130 +1,96 @@
 # Code Architecture
 
 ## Overview
-The Lift Up Game is a Pygame-based simulation where the player manages elevators to transport customers between floors efficiently, minimizing penalties based on wait times.
+The Lift Up Game is a simulation where the player manages elevators to transport customers between floors, aiming to minimize penalties based on wait times. The architecture is designed to be data-driven, allowing for easy creation of new levels.
 
-## Key Components
+## Core Components
 
-### Main Game Loop (`main.py`)
-- **`LiftUpGame`**: The central controller. Initializes Pygame, creates `Floor` and `Lift` objects, manages the event loop, and updates all game entities.
-- **`StatusBar`**: Displays the total accumulated penalty at the bottom of the screen.
+### 1. Main Game (`LiftUpGame.py`)
+- **`LiftUpGame`**: The main application class. It initializes Pygame, manages the main game loop, and orchestrates the loading and transitioning of levels.
+- **`main.py`**: The entry point of the application that creates and runs a `LiftUpGame` instance.
 
-### Entities
+### 2. Level Loading & Data
+- **`LevelsLoader.py`**: Responsible for discovering and parsing level data from the file system (`data/levels/`). It checks for the existence of level files and loads them into structured data objects.
+- **`Raw...Data.py`**: A set of simple data classes (`RawLevelData`, `RawCustomerData`, `RawSpawnLocationData`) that hold the parsed data from CSV files, ensuring a clean separation between file I/O and game logic.
 
-#### Lift (`Lift.py`)
-- Represents an elevator.
-- **State Machine**: `idle`, `moving_up`, `moving_down`, `waiting` (door open).
-- **Logic**: Uses a target sequence algorithm (`_find_best_stop`) to determine the most efficient path to serve requests and passengers.
+### 3. Gameplay Logic
+- **`Level.py`**: Encapsulates all logic for a single level. It manages its own game clock, floors, lifts, and the main update/draw cycle for a level's duration. It is initialized with a `RawLevelData` object.
+- **`Floor.py`**: Represents a single floor, responsible for managing the `CustomerSpawnLocation`s on it and tracking customers who have arrived.
+- **`Lift.py`**: Contains the state machine and logic for elevator movement, customer pickup/drop-off, and pathfinding via the `_find_best_stop` algorithm.
+- **`Customer.py`**: Represents a passenger with states like `waiting`, `walking`, `in_lift`, and `delivered`. It also calculates its own penalty score.
 
-#### Floor (`Floor.py`)
-- Represents a building level.
-- Contains `CustomerSpawnLocation`s.
-- Manages customers currently on that floor (both spawning and those who arrived via lift).
+### 4. Spawning System
+- **`CustomerSpawnLocation.py`**: A point on a floor where customers are generated.
+- **`DeterministicCustomerFactory.py`**: Reads a list of `RawCustomerData` and spawns customers at the correct time based on the level's clock.
+- **`RandomCustomerFactory.py`**: A legacy factory for generating customers randomly (currently unused but kept for potential future game modes).
 
-#### Customer (`Customer.py`)
-- Represents a passenger.
-- **State Machine**: `waiting_for_lift_selection`, `walking_to_lift`, `waiting_at_lift`, `in_lift`, `exiting_lift`, `delivered`.
-- **Attributes**: Priority (High/Normal), Target Floor, Penalty calculation logic.
+### 5. Post-Level Action System (`post_level/`)
+This system defines what happens after a level is completed. It uses a command pattern to create a chain of actions.
+- **`PostLevelCompleteAction.py`**: An abstract base class defining the `execute(level)` interface.
+- **`CompositePostLevelCompleteAction.py`**: An action that holds a list of other actions and executes them in sequence.
+- **`LevelTransitionAction.py`**: Displays a summary screen with the player's score for the completed level and provides navigation buttons (Next, Replay, etc.).
+- **`LoadLevelAction.py`**: An action that tells the main `LiftUpGame` instance to load a specific level number.
+- **`GameHistoryUpdaterAction.py`**: Saves the result of a completed level to the history file.
+- **`GameHistoryShowAction.py`**: Displays the full, formatted game history screen after the final level.
+- **`ExitAction.py`**: Signals the main game loop to terminate.
 
-#### Spawning System
-- **`CustomerSpawnLocation.py`**: Manages timing for spawning customers on a specific floor.
-- **`RandomCustomerFactory.py`**: Generates `Customer` instances with random attributes (target floor, priority).
-
-### UI & Interaction
-- **Popups**:
-    - `FloorRequestPopup`: Allows player to assign Lift A or B.
-    - `ServedCustomerInfoPopup`: Shows status while waiting.
-    - `DeliveredCustomerPopup`: Shows final stats upon delivery.
-- **Input**: Mouse clicks are detected in `main.py` and delegated to active customers/popups.
+### 6. Data Persistence
+- **`GameHistoryPersistence.py`**: Manages reading from and writing to `game_history.csv`, handling the serialization of game results.
+- **`RawGameHistoryEntry.py`**: A data class representing a single row in the history file.
 
 ## Diagrams
 
-### Class Diagram
+### High-Level Architecture
 
 ```mermaid
-classDiagram
-    class LiftUpGame {
-        +run()
-        +update()
-        +draw()
-    }
-    class Lift {
-        +update()
-        +add_customer_request()
-        -_find_best_stop()
-    }
-    class Floor {
-        +update()
-        +get_all_customers()
-    }
-    class Customer {
-        +state
-        +target_floor
-        +calculate_penalty()
-    }
-    class CustomerSpawnLocation {
-        +update()
-    }
-    class StatusBar {
-        +add_penalty()
-    }
+graph TD
+    A[main.py] --> B(LiftUpGame);
+    B --> C{LevelsLoader};
+    C --> D[data/levels/*.csv];
+    C --> E(RawLevelData);
+    B --> F(Level);
+    F --> E;
+    F --> G(Floor);
+    F --> H(Lift);
+    G --> I(CustomerSpawnLocation);
+    I --> J(DeterministicCustomerFactory);
+    J --> K(Customer);
+    H --> K;
+    
+    subgraph Post-Level Actions
+        L(CompositePostLevelCompleteAction) --> M(GameHistoryUpdaterAction);
+        L --> N(LevelTransitionAction);
+        N --> O(LoadLevelAction);
+        N --> P(GameHistoryShowAction);
+        N --> Q(ExitAction);
+    end
 
-    LiftUpGame *-- "2" Lift
-    LiftUpGame *-- "5" Floor
-    LiftUpGame *-- StatusBar
-    Floor *-- CustomerSpawnLocation
-    CustomerSpawnLocation ..> Customer : Creates
-    Lift o-- Customer : Transports
-    Floor o-- Customer : Contains
+    F --> L;
+    M --> R(GameHistoryPersistence);
+    P --> R;
+    R --> S[data/output/game_history.csv];
 ```
 
-### Customer Lifecycle Sequence
+### Customer Lifecycle
 
 ```mermaid
 sequenceDiagram
-    participant Game
+    participant Level
     participant Spawner
+    participant Factory
     participant Customer
     participant Player
     participant Lift
 
-    Game->>Spawner: update(dt)
-    Spawner->>Customer: create()
-    Customer->>Game: Appears on Floor
-    Player->>Customer: Click Popup (Select Lift A)
+    Level->>Spawner: update(level_time)
+    Spawner->>Factory: get_customer(level_time)
+    Factory-->>Customer: create(request_time=level_time)
+    Customer->>Level: Appears on Floor
+    Player->>Customer: Click Popup
     Customer->>Lift: add_customer_request()
-    Customer->>Customer: State: walking_to_lift
-    loop Pathfinding
-        Lift->>Lift: _find_best_stop()
-        Lift->>Lift: Move to Floor
+    loop Movement & Transport
+        Lift->>Lift: update()
+        Lift->>Customer: Arrive, exit_lift(delivery_time=level_time)
     end
-    Lift->>Customer: Arrive (Open Door)
-    Customer->>Lift: Enter
-    Customer->>Customer: State: in_lift
-    Lift->>Lift: Move to Target Floor
-    Lift->>Customer: Arrive (Open Door)
-    Customer->>Floor: Exit
-    Customer->>Customer: State: delivered
-    Customer->>Game: Calculate Penalty
-```
-
-### Lift State Machine
-
-```mermaid
-stateDiagram-v2
-    [*] --> Idle
-    Idle --> Moving : Request Received
-    Moving --> Waiting : Arrive at Floor
-    Waiting --> Moving : More Targets
-    Waiting --> Idle : No Targets
-    
-    state Moving {
-        [*] --> Up
-        [*] --> Down
-    }
-    
-    state Waiting {
-        [*] --> DoorOpen
-        DoorOpen --> DoorClosed : Timer
-    }
+    Customer->>Level: State: delivered
 ```

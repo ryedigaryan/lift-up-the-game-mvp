@@ -8,7 +8,6 @@ from GameHistoryPersistence import GameHistoryPersistence
 if TYPE_CHECKING:
     from Level import Level
     from LiftUpGame import LiftUpGame
-    from post_level.ExitAction import ExitAction
 
 
 class LevelTransitionAction(PostLevelCompleteAction):
