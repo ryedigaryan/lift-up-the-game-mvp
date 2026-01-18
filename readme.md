@@ -20,4 +20,4 @@ Project Management:
 
 ## A Tiny Demo
 
-![](docs/demo_recording.mp4)
+![](docs/demo_recording.gif)
