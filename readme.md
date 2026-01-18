@@ -17,3 +17,7 @@ Technical (AI-generated):
 
 Project Management:
 1. [progress.md](docs/progress.md)
+
+## A Tiny Demo
+
+![](docs/demo_recording.mp4)
